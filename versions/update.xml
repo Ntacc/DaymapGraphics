@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <gupdate xmlns='http://www.google.com/update2/response' protocol='2.0'>
   <app appid='ojdieeahchglaijbfiefgapbbdcnnbgl'>
-    <updatecheck codebase='https://raw.githubusercontent.com/apate98/DaymapGraphics/main/DaymapGraphics.crx' version='7.2.0' />
+    <updatecheck codebase='https://github.com/apate98/DaymapGraphics/blob/main/versions/DaymapGraphics_7.2.0.crx?raw=true' version='7.2.0' />
   </app>
 </gupdate>
