@@ -65,7 +65,6 @@
 
 // Known issues:
 // When changing messages pages, the messages are opaque.
-// Khan Academy returns a 403 error when using embeds. This will be fixed by using p5.js.
 
 
 
@@ -387,18 +386,27 @@ chrome.runtime.onMessage.addListener((message) => {
 				date = Date().substr(11, 4) + "-12-" + Date().substr(8, 2);
 				break;
 		}
-		var time = Number(Date().substr(16, 2) + Date().substr(19, 2));
-		var lessonEls = [document.querySelector(".diaryDay[data-date='"+date+"']").parentNode.childNodes[0], document.querySelector(".diaryDay[data-date='"+date+"']").parentNode.childNodes[1], document.querySelector(".diaryDay[data-date='"+date+"']").parentNode.childNodes[2], document.querySelector(".diaryDay[data-date='"+date+"']").parentNode.childNodes[3], document.querySelector(".diaryDay[data-date='"+date+"']").parentNode.childNodes[4], document.querySelector(".diaryDay[data-date='"+date+"']").parentNode.childNodes[5]];
-		var lessonEl;
-
-		i = 0;
-		while (!lessonEl && i < 10) {
-			if (lessonEls[i]) {
-				if (timeOfDiaryEl(lessonEls[i])[0] < time && timeOfDiaryEl(lessonEls[i])[1] >= time) {
-					lessonEl = lessonEls[i];
+		let time = Number(Date().substr(16, 2) + Date().substr(19, 2));
+		if(document.querySelector(".diaryDay[data-date='"+date+"']")) {
+			let lessonEls = [];
+				for(i = 0;; i++) {
+					try {
+						lessonEls.push(document.querySelector(".diaryDay[data-date='"+date+"']").parentNode.childNodes[i]);
+					} catch (err) {
+						break;
+					}
 				}
+			var lessonEl;
+
+			i = 0;
+			while (!lessonEl && i < 10) {
+				if (lessonEls[i]) {
+					if (timeOfDiaryEl(lessonEls[i])[0] < time && timeOfDiaryEl(lessonEls[i])[1] >= time) {
+						lessonEl = lessonEls[i];
+					}
+				}
+				i ++;
 			}
-			i ++;
 		}
 		var evilEl;
 		for(var i = 0; i < document.querySelectorAll(".L").length; i++) {
