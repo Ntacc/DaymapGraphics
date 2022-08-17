@@ -35,12 +35,10 @@
 // 7.1.0: Made the header less obtrusive and made dark mode work properly.
 // 7.2.0: Added option to revert to original layout.
 // 7.2.1: Fixed a major bug which would cause Daymap to not load properly.
+// 7.2.2: Removed auto background option as it confused many new users. Background will now load regardless of checking the box. Also accounted for school removing messages.
 
 // Credits and thanks:
 // Special thanks to Kelvin for troubleshooting many issues when transferring to the new Daymap, whom without I could not have solved any of the problems.
-
-// Notes:
-// Some versions may not be available on Greasyfork.
 
 // TODO:
 // Presets
@@ -211,7 +209,6 @@ chrome.runtime.onMessage.addListener((message) => {
 					Blur amount: <input id='blur' type='range' min='0' max='50' step='0.1' name='blur'></input>
 					<input id='blurAmount' name='blurAmount' readonly='true' style='background-color:light-gray;'></input><br/>
 					Auto attendance rainbow:<input id='autoAttendanceRainbow' type='checkbox'></input><br/>
-					Auto background:<input id='autoBackground' type='checkbox'/><br/>
 					Revert to original layout:<input id='originalLayout' type='checkbox'/><br/>
 					Dark mode:<input id='darkMode' type='checkbox'/><br/>
 					Background CSS property (value only):<input type='text' id='bodyBackground'/>
@@ -243,30 +240,27 @@ chrome.runtime.onMessage.addListener((message) => {
 	if(document.cookie != "" ? parseInt(document.cookie.substr(document.cookie.length - 1, 1)) == 1 : 0) {
 		document.querySelector("#darkMode").setAttribute("checked", 1);
 	}
-	if(getItem("autoBackground") != 0 && getItem("autoBackground")) {
-		document.querySelector("#autoBackground").setAttribute("checked", 1);
-		if(getItem("bodyBackground") != "" && getItem("bodyBackground") != undefined) {
-			document.querySelector("#bodyUnderlay").style.background=getItem("bodyBackground");
-			if(getItem("bodyBackground") === "linear-gradient(to bottom right, yellow, black, black, black)") {
-				document.querySelector("#bodyUnderlay").innerHTML += "<style></style>";
-				for(i = 0; i < 500; i ++) {
-					anything[0] = Math.random() * 7.5;
-					anything[1] = Math.random() * 255;
-					anything[2] = Math.random() * 100;
-					anything[3] = Math.random() * 100;
-					anything[4] = Math.random() + 1;
-					anything[5] = (Math.random() - 0.5) * 90;
-					if(anything[2] < 37.5 && anything[3] < 37.5) {
-						continue;
-					}
-					document.querySelector("#bodyUnderlay").innerHTML += "<div class='r50d' style='width:" + anything[0] + "px;height:" + anything[0] + "px;top:" + anything[2] + "vh;left:" + anything[3] + "vw;position:absolute;border-radius:" + constrain(Math.random() * 50, 0, 50) + "%;background-color:rgba(" + constrain(anything[1] * anything[4], 0, 255) + ", " + constrain((anything[1] > 127.5 ? (127.5 - anything[1]) : anything[1]) * anything[4], 0, 255) + ", " + constrain((255 - anything[1]) * anything[4], 0, 255) + ", " + Math.random() / 1.5 +");transform:rotate("+ anything[5] + "deg);'></div>";
-					r50d.push("1," + Math.random() / 100 + "," + anything[5] + "," + (Math.random() - 0.5) * 15);
+	if(getItem("bodyBackground") != "" && getItem("bodyBackground") != undefined) {
+		document.querySelector("#bodyUnderlay").style.background=getItem("bodyBackground");
+		if(getItem("bodyBackground") === "linear-gradient(to bottom right, yellow, black, black, black)") {
+			document.querySelector("#bodyUnderlay").innerHTML += "<style></style>";
+			for(i = 0; i < 500; i ++) {
+				anything[0] = Math.random() * 7.5;
+				anything[1] = Math.random() * 255;
+				anything[2] = Math.random() * 100;
+				anything[3] = Math.random() * 100;
+				anything[4] = Math.random() + 1;
+				anything[5] = (Math.random() - 0.5) * 90;
+				if(anything[2] < 37.5 && anything[3] < 37.5) {
+					continue;
 				}
+				document.querySelector("#bodyUnderlay").innerHTML += "<div class='r50d' style='width:" + anything[0] + "px;height:" + anything[0] + "px;top:" + anything[2] + "vh;left:" + anything[3] + "vw;position:absolute;border-radius:" + constrain(Math.random() * 50, 0, 50) + "%;background-color:rgba(" + constrain(anything[1] * anything[4], 0, 255) + ", " + constrain((anything[1] > 127.5 ? (127.5 - anything[1]) : anything[1]) * anything[4], 0, 255) + ", " + constrain((255 - anything[1]) * anything[4], 0, 255) + ", " + Math.random() / 1.5 +");transform:rotate("+ anything[5] + "deg);'></div>";
+				r50d.push("1," + Math.random() / 100 + "," + anything[5] + "," + (Math.random() - 0.5) * 15);
 			}
-			if(getItem("bodyBackground") === "url('https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg')") {
-				setItem("bodyBackground", "black url('https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg')");
-				window.location.href = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
-			}
+		}
+		if(getItem("bodyBackground") === "url('https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg')") {
+			setItem("bodyBackground", "black url('https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg')");
+			window.location.href = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
 		}
 	}
 	i = 0;
@@ -288,9 +282,8 @@ chrome.runtime.onMessage.addListener((message) => {
 		location.reload();
 	});
 	document.querySelector("#autoAttendanceRainbow").addEventListener("click", () => {setItem("autoAttendanceRainbow", getItem("autoAttendanceRainbow") != 0 ? 0 : 1);});
-	document.querySelector("#autoBackground").addEventListener("click", () => {setItem("autoBackground", getItem("autoBackground") != 0 && getItem("autoBackground") ? 0 : 1);});
 	document.querySelector("#originalLayout").addEventListener("click", () => {setItem("originalLayout", getItem("originalLayout") != 0 && getItem("originalLayout") ? 0 : 1);});
-	document.querySelector("#darkMode").addEventListener("click", () => {let _dark = document.cookie != "" ? parseInt(document.cookie.substr(document.cookie.length - 1, 1)) == 1 ? "darkMode=0": "darkMode=1" : "darkMode=1"; document.cookie.split(";").forEach(function(c) { document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");}); document.cookie = _dark;});
+	document.querySelector("#darkMode").addEventListener("click", () => {let _dark = document.cookie != "" ? parseInt(document.cookie.substr(document.cookie.length - 1, 1)) == 1 ? "darkMode=0;expires=2099-09-21T22:22:19.211Z": "darkMode=1;expires=2099-09-21T22:22:19.211Z" : "darkMode=1;expires=2099-09-21T22:22:19.211Z"; document.cookie.split(";").forEach(function(c) { document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");}); document.cookie = _dark;});
 	if (!document.querySelector(".sdIndicator")) {
 		if(document.querySelector(".StudentBox > table > tbody")) {
 			document.querySelector(".StudentBox > table > tbody").innerHTML += ('<tr><td colspan="3"><div id="divIndicators"><div><div class="sdIndicator" title="Term" style="background-color:#65EC0B">100</div><div class="sdCap">Attendance Tracking</div></div></div></td></tr>');
@@ -453,15 +446,20 @@ chrome.runtime.onMessage.addListener((message) => {
 				}
 			});
 		}
-		document.querySelector(".MasterContent table tbody tr td .Header").addEventListener("click", () => {
-			bodyColour = prompt("Please enter a background", "#ABCDEF");
-			if (bodyColour && bodyColour != "RAINBOW") {
-				bodyRainbow[2] = 0;
-				document.querySelector("#bodyUnderlay").style.background = bodyColour;
-			} else if (bodyColour === "RAINBOW") {
-				bodyRainbow[2] = 1;
-			}
-		});
+		if(document.querySelector(".card h2")) {
+			document.querySelector(".card h2").addEventListener("click", () => {
+				bodyColour = prompt("Please enter a background", "#ABCDEF");
+				if (bodyColour && bodyColour != "RAINBOW") {
+					bodyRainbow[2] = 0;
+					document.querySelector("#bodyUnderlay").style.background = bodyColour;
+				} else if (bodyColour === "RAINBOW") {
+					bodyRainbow[2] = 1;
+				}
+			});
+		}
+	}
+	if(!document.querySelector(".msg")) {
+		document.querySelectorAll(".card")[1].remove();
 	}
 	if(getItem("autoBodyRainbow")) {
 		setTimeout(bodyRainbow[2]=1,1)
