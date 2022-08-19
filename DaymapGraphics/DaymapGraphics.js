@@ -36,6 +36,7 @@
 // 7.2.0: Added option to revert to original layout.
 // 7.2.1: Fixed a major bug which would cause Daymap to not load properly.
 // 7.2.2: Removed auto background option as it confused many new users. Background will now load regardless of checking the box. Also accounted for school removing messages.
+// 7.2.3: Fixed a major bug that would cause the menus to not work properly some of the time. Also fixed the dark mode cookie expiring after the session.
 
 // Credits and thanks:
 // Special thanks to Kelvin for troubleshooting many issues when transferring to the new Daymap, whom without I could not have solved any of the problems.
@@ -283,7 +284,7 @@ chrome.runtime.onMessage.addListener((message) => {
 	});
 	document.querySelector("#autoAttendanceRainbow").addEventListener("click", () => {setItem("autoAttendanceRainbow", getItem("autoAttendanceRainbow") != 0 ? 0 : 1);});
 	document.querySelector("#originalLayout").addEventListener("click", () => {setItem("originalLayout", getItem("originalLayout") != 0 && getItem("originalLayout") ? 0 : 1);});
-	document.querySelector("#darkMode").addEventListener("click", () => {let _dark = document.cookie != "" ? parseInt(document.cookie.substr(document.cookie.length - 1, 1)) == 1 ? "darkMode=0;expires=2099-09-21T22:22:19.211Z": "darkMode=1;expires=2099-09-21T22:22:19.211Z" : "darkMode=1;expires=2099-09-21T22:22:19.211Z"; document.cookie.split(";").forEach(function(c) { document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");}); document.cookie = _dark;});
+	document.querySelector("#darkMode").addEventListener("click", () => {let d = new Date(); let _dark = (document.cookie != "" ? parseInt(document.cookie.substr(document.cookie.length - 1, 1)) == 1 ? "darkMode=0": "darkMode=1" : "darkMode=1") + ";expires=" + new Date((d.setFullYear(d.getFullYear() + 10))).toUTCString(); document.cookie.split(";").forEach(function(c) { document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");}); document.cookie = _dark;});
 	if (!document.querySelector(".sdIndicator")) {
 		if(document.querySelector(".StudentBox > table > tbody")) {
 			document.querySelector(".StudentBox > table > tbody").innerHTML += ('<tr><td colspan="3"><div id="divIndicators"><div><div class="sdIndicator" title="Term" style="background-color:#65EC0B">100</div><div class="sdCap">Attendance Tracking</div></div></div></td></tr>');
@@ -459,7 +460,7 @@ chrome.runtime.onMessage.addListener((message) => {
 		}
 	}
 	if(!document.querySelector(".msg")) {
-		document.querySelectorAll(".card")[1].remove();
+		document.querySelectorAll(".col-4_md-6_sm-12")[1].remove();
 	}
 	if(getItem("autoBodyRainbow")) {
 		setTimeout(bodyRainbow[2]=1,1)

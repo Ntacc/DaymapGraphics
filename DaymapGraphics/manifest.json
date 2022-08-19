@@ -1,14 +1,14 @@
 {
     "manifest_version": 3,
     "name": "Daymap Graphics",
-    "version": "7.2.2",
+    "version": "7.2.3",
     "description": "Daymap is currently plain and boring. With Daymap Graphics, customise colour, transparency, blurred background, and more!",
     "permissions": [
 		"storage"
     ],
 	"content_scripts": [
 		{
-			"matches": ["*://*.daymap.net/*"],
+			"matches": ["*://*.daymap.net/*", "*://*.sa.edu.au/da*"],
 			"js": ["daymapGraphics.js"]
 		}
 	],

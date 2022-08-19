@@ -1,6 +1,15 @@
 // From Daymap.
 
-let menu = new LoopMenu(document.querySelector('#mnu'), null)
+
+let getMenu = () => {
+	let menu2 = new LoopMenu(document.querySelector('#mnu'), null);
+	if(!menu2.MenuHtml) {
+		return getMenu();
+	} else {
+		return menu2;
+	}
+}
+let menu = getMenu(); 
 menu.MenuHtml[272] = null;
 menu.MenuHtml[1] = "<table class='lpMenu' cellspacing='0'><tr><td class='lpMenuTd1'><div></div></td><td class='lpMenuTd2'>Feed View</td><td class='lpMenuTd3' href=\"/daymap/student/dayplan.aspx\" menuId='2'>&nbsp;</td></tr><tr><td class='lpMenuTd1'><div></div></td><td class='lpMenuTd2'>Timetable</td><td class='lpMenuTd3' href=\"/daymap/timetable/timetable.aspx\" menuId='3'>&nbsp;</td></tr><tr><td class='lpMenuTd1'><div></div></td><td class='lpMenuTd2'>Homework</td><td class='lpMenuTd3' href=\"/daymap/student/homework.aspx\" menuId='36'>&nbsp;</td></tr><tr><td class='lpMenuTd1'><div></div></td><td class='lpMenuTd2'>Summary</td><td class='lpMenuTd3' href=\"/daymap/student/studentreport.aspx\" menuId='56'>&nbsp;</td></tr><tr><td class='lpMenuTd1'><div></div></td><td class='lpMenuTd2'>Portfolio</td><td class='lpMenuTd3' href=\"/daymap/student/portfolio.aspx\" menuId='175'>&nbsp;</td></tr><tr><td class='lpMenuTd1'><div></div></td><td class='lpMenuTd2'>Mobile Daymap</td><td class='lpMenuTd3' href=\"/daymap/m/index.aspx\" menuId='141'>&nbsp;</td></tr></table>";
 menu.MenuHtml[2] = null;
