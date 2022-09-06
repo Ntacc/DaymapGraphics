@@ -1,4 +1,4 @@
-// From Daymap.
+// The code from line 12 onwards is based on some code that was previously used by Daymap.
 
 
 let getMenu = () => {
