@@ -41,6 +41,7 @@
 // 7.3.1: Fixed evil mode again, and fixed a very old bug with evil mode.
 // 7.4.0: Removed all localStorage-related code.
 // 7.5.0: Introduced compatibility for all Daymap pages, changed rainbows to a constructor so that all indicators can be rainbow, added custom profile pictures, fixed the post ticker, fixed changing message pages, changed dark mode cookie path, and a few cool graphical and performance improvements.
+// 7.5.1: Fixed a bug with the rainbow.
 
 // Credits and thanks:
 // Special thanks to Kelvin for troubleshooting many issues when transferring to the new Daymap, whom without I could not have solved any of the problems.
@@ -65,7 +66,7 @@
 
 
 
-var version = "7.5.0";
+var version = "7.5";
 
 // Set item in storage
 var setItem = (key, value) => {
@@ -237,9 +238,9 @@ var r50d = [];
 			`; return something;})());
 			document.querySelector(".main-layout").appendChild((() => {let something = document.createElement("div"); something.innerHTML = `
 				<div id='closeGuide' onclick='document.querySelector("#guide").style.display="none";'>×</div>
-				<span id='instructions'>Daymap graphics 7.5.0: I've been promising this update for ages, and it's finally here! Enjoy the bugfixes!</span>
+				<span id='instructions'>Daymap Graphics 7.5.1: I've been promising this update for ages, and it's finally here! Enjoy the bugfixes and new features!</span>
 			`; something.setAttribute("id", "guide"); return something;})());
-			setItem("version", "7.5.0")
+			setItem("version", "7.5")
 		}
 		
 		document.querySelector("body").style.fontFamily='Roboto, "Helvetica Neue", Helvetica, Arial, sans-serif'; // Just makes Daymap look better
@@ -405,23 +406,9 @@ var r50d = [];
 			attendanceRainbows.push(new rainbow(attendanceEls[i], getItem("rainbowSpeed"), getItem("autoAttendanceRainbow") != 0 && getItem("autoAttendanceRainbow") ? 1 : 0))
 		}
 		// To make random numbers into colours that actually look good, there is a method by @WeatherWonders: https://www.khanacademy.org/computer-programming/the-randomish-quiz/6515084802260992
-		for(i = 0; i < attendanceRainbows.length; i++) {
-			setInterval(() => {if(attendanceRainbows[i]) {attendanceRainbows[i].update();}}, 10);
-			setInterval(() => {if(attendanceRainbows[i]) {attendanceRainbows[i].changeDirection();}}, 5000);
-		}
-
-		// Changing the attendance etc. colour to whatever you want
-		if(attendanceEls.length) {
-			attendanceEls[0].addEventListener("click", () => {
-				attendanceColour = prompt("Please enter a colour", "#7FFFD4");
-				if (attendanceColour && attendanceColour != "RAINBOW") {
-					attendanceRainbows[0].on = 0;
-					attendanceEls[0].style.backgroundImage = "";
-					attendanceEls[0].style.background = attendanceColour;
-				} else if (attendanceColour === "RAINBOW") {
-					attendanceRainbows[0].on = 1;
-				}
-			});
+		if(attendanceRainbows.length) {
+			setInterval(() => {for(let i = 0; i < attendanceRainbows.length; i++) {attendanceRainbows[i].update();}}, 10);
+			setInterval(() => {for(let i = 0; i < attendanceRainbows.length; i++) {attendanceRainbows[i].changeDirection();}}, 5000);
 		}
 		// Getting the element that describes the current time
 		if(document.querySelector(".diaryWeek")) {
