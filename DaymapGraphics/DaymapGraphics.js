@@ -41,14 +41,14 @@
 // 7.3.1: Fixed evil mode again, and fixed a very old bug with evil mode.
 // 7.4.0: Removed all localStorage-related code.
 // 7.5.0: Introduced compatibility for all Daymap pages, changed rainbows to a constructor so that all indicators can be rainbow, added custom profile pictures, fixed the post ticker, fixed changing message pages, changed dark mode cookie path, and a few cool graphical and performance improvements.
-// 7.5.1: Fixed a bug with the rainbow.
+// 7.5.1: Fixed a bug with the rainbow (BUG CAPTURED: Rainbowix Lagginexia. Description: Rainbow no appear)
+// 7.5.2: Added the custom profile picture to the top right corner icon in the original layout.
 
 // Credits and thanks:
 // Special thanks to Kelvin for troubleshooting many issues when transferring to the new Daymap, whom without I could not have solved any of the problems.
 
 // TODO:
 // Presets
-// Fix animated profile picture
 // Fix calendar opacity
 
 // Compatibile pages:
@@ -335,7 +335,7 @@ var r50d = [];
 			document.querySelector("#darkMode").setAttribute("checked", 1);
 		}
 		// Easter eggs :D
-		let backgroundNumber;
+		let shosty = "https://cdn.discordapp.com/attachments/1162609296362704907/1216998409823850567/shostakovich.png?ex=66026d17&is=65eff817&hm=bb4cb284c14fe5ca2b91a3c5f43982c669b0c100929e135ef361f0f077b68487&";
 		if(getItem("bodyBackground") != "" && getItem("bodyBackground") != undefined) {
 			if(getItem("bodyBackground") === "surprise me") {
 				let backgrounds = [
@@ -343,8 +343,7 @@ var r50d = [];
 					"linear-gradient(to bottom right, yellow, black, black, black)",
 					"url('https://www.nasa.gov/sites/default/files/thumbnails/image/main_image_star-forming_region_carina_nircam_final-5mb.jpg') 0 0 / cover"
 				];
-				backgroundNumber = Math.floor(Math.random() * 3);
-				document.querySelector("#bodyUnderlay").style.background = backgrounds[backgroundNumber];
+				document.querySelector("#bodyUnderlay").style.background = backgrounds[Math.floor(Math.random() * 3)];
 			} else {
 				document.querySelector("#bodyUnderlay").style.background=getItem("bodyBackground");
 			}
@@ -763,6 +762,9 @@ var r50d = [];
 					for(i = 0; i < header.querySelectorAll("td").length; i++) {
 						header.querySelectorAll("td")[i].style.backgroundColor = "rgba(" + (dark ? "37, 37, 37," : "237, 235, 233,") + getItem("translucentMode") * 1.2 + ")";
 					}
+					if(getItem("url")) {
+						header.querySelector("#divUserAvatar").style.background = "url(" + (getItem("url") == "shosty" ? shosty : getItem("url")) + ") center / cover no-repeat";
+					}
 					header.querySelector(".header").style.backgroundColor = "rgba(" + (dark ? "37, 37, 37," : "237, 235, 233,") + getItem("translucentMode") * 1.3 + ")";
 					header.querySelector(".header").style.backdropFilter = "blur(" + getItem("blurAmount") + "px)";
 					return header;
@@ -792,7 +794,6 @@ var r50d = [];
 		}
 		// Profile picture thingy
 		if(getItem("url") && document.querySelector(".photoThumb")) {
-			let shosty = "https://cdn.discordapp.com/attachments/1162609296362704907/1216998409823850567/shostakovich.png?ex=66026d17&is=65eff817&hm=bb4cb284c14fe5ca2b91a3c5f43982c669b0c100929e135ef361f0f077b68487&";
 			document.querySelector(".photoThumb").style.background = "url(" + (getItem("url") == "shosty" ? shosty : getItem("url")) + ") 0 0 / contain no-repeat";
 			document.querySelector(".photoThumb").style.width = "100px";
 			document.querySelector(".photoThumb").style.height = "120px";
