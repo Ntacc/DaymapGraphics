@@ -1,20 +1,20 @@
 {
     "manifest_version": 3,
     "name": "Daymap Graphics",
-    "version": "7.5.2",
+    "version": "7.6.0",
     "description": "Daymap is currently plain and boring. With Daymap Graphics, customise colour, transparency, blurred background, and more!",
     "permissions": [
 		"storage"
     ],
 	"content_scripts": [
 		{
-			"matches": ["*://*.daymap.net/*", "*://*.sa.edu.au/daymap"],
+			"matches": ["*://*.daymap.net/*", "*://*.sa.edu.au/daymap*"],
 			"js": ["daymapGraphics.js"]
 		}
 	],
 	"web_accessible_resources": [
 		{
-			"resources": ["headerMenus.js"],
+			"resources": ["headerMenus.js", "popup.js"],
 			"matches": ["*://*.daymap.net/*"]
 		}
 	],
@@ -23,7 +23,7 @@
     },
 	"action": {
 		"default_popup": "popup.html",
-		"default_icon": "icons/128.png"
+		"default_icon": "128.png"
 	},
 	"update_url": "https://clients2.google.com/service/update2/crx"
 }

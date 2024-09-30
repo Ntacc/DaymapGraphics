@@ -43,30 +43,40 @@
 // 7.5.0: Introduced compatibility for all Daymap pages, changed rainbows to a constructor so that all indicators can be rainbow, added custom profile pictures, fixed the post ticker, fixed changing message pages, changed dark mode cookie path, and a few cool graphical and performance improvements.
 // 7.5.1: Fixed a bug with the rainbow (BUG CAPTURED: Rainbowix Lagginexia. Description: Rainbow no appear)
 // 7.5.2: Added the custom profile picture to the top right corner icon in the original layout.
+// 7.6.0: Moved settings to extension popup, removed top menu code due to the upcoming Daymap update that removes the top menu, fixed bug that led to the slow blur backdrop filter being applied even when unnecessary.
 
 // Credits and thanks:
 // Special thanks to Kelvin for troubleshooting many issues when transferring to the new Daymap, whom without I could not have solved any of the problems.
+// Also special thanks to Nugget (aka Tuesday) (aka actually a lot of different names) for coming up with the idea of, and designing the bug book.
+// And to everyone who helped promote this extension, thank you very much for all of your support!
 
 // TODO:
 // Presets
 // Fix calendar opacity
 
-// Compatibile pages:
-// All of them!!!
-
-// Known issues:
-// Calendar doesn't have transparency effects
+// I've tried to implement modules to make the code easier to read, and it would be possible, but it's just incredibly difficult to do in an extension. I don't foresee doing so any time soon.
 
 
 
 
+// CHECKLIST BEFORE PUSHING UPDATE
+// Change changelog
+// Change version and changes variables
+// Change manifest.json version
+// Check popup.html
 
 
 
 
 
 
-var version = "7.5";
+
+
+
+
+var version = "7.6";
+//var changes = "Daymap Graphics 7.6.0: Daymap Graphics now has a minigame! Find some bugs and collect them in the bug book! (special thanks to [someone] for coming up with the idea and drawing the bugs!)";
+var changes = "Daymap Graphics 7.6.0: Moved the settings to the extension popup (most likely the top right corner of your browser). Also fixed a major bug that was making Daymap really slow.";
 
 // Set item in storage
 var setItem = (key, value) => {
@@ -78,12 +88,10 @@ constrain = (num, min, max) => {
 	return num < min ? min : num > max ? max : num;
 }
 
-
-var lessonStart;
-var lessonEnd;
+var lessonStart, lessonEnd, date, classEls = [], i, anything = [], r50d = [], dark, translucentness;
 
 // Get time described by the diary.
-timeOfDiaryEl = (lessonEl) => {
+function timeOfDiaryEl (lessonEl) {
 	if(lessonEl.innerText.substr(1, 1) === ":" && lessonEl.innerText.substr(12, 1) !== ":") {
 		lessonStart = lessonEl.innerText.substr(0, 1) + lessonEl.innerText.substr(2, 2);
 		lessonEnd = lessonEl.innerText.substr(11, 2) + lessonEl.innerText.substr(14, 2);
@@ -152,12 +160,6 @@ function rainbow(el, speed, on) {
 	}
 };
 
-var date;
-var classEls = [];
-var i;
-var anything = [];
-var r50d = [];
-
 // Probably bad practice but this was the only way I could find to get the storage and use it without .then every time or making the entire code asynchronous (which would break the code).
 (async () => {
 	return JSON.stringify(await chrome.storage.sync.get());
@@ -216,7 +218,7 @@ var r50d = [];
 					background: linear-gradient(to bottom right, azure, floralwhite, snow, ghostwhite, ivory);
 					position: fixed;
 					width: 20vw;
-					height: 17vh;
+					height: 18.9vh;
 					padding: 2.5vh;
 					color: #1A1C1E;
 					font-size: 2vh;
@@ -238,104 +240,19 @@ var r50d = [];
 			`; return something;})());
 			document.querySelector(".main-layout").appendChild((() => {let something = document.createElement("div"); something.innerHTML = `
 				<div id='closeGuide' onclick='document.querySelector("#guide").style.display="none";'>×</div>
-				<span id='instructions'>Daymap Graphics 7.5.1: I've been promising this update for ages, and it's finally here! Enjoy the bugfixes and new features!</span>
+				<span id='instructions'>` + changes + `</span>
 			`; something.setAttribute("id", "guide"); return something;})());
-			setItem("version", "7.5")
+			setItem("version", "7.6")
 		}
 		
 		document.querySelector("body").style.fontFamily='Roboto, "Helvetica Neue", Helvetica, Arial, sans-serif'; // Just makes Daymap look better
 		
-		// Toolbox. To be moved to popup.html in future versions.
-		document.querySelector("head").appendChild((() => {let something = document.createElement("style");something.innerHTML = `
-				#toolbox {
-					top: 15vh;
-					left: 20vw;
-					background-color: rgba(229, 229, 229, 0.8);
-					position: fixed;
-					width: 60vw;
-					height: 70vh;
-					padding: 50px;
-					border-width: 50px;
-					border-image: linear-gradient(red, yellow);
-				}
-				#closeToolbox {
-					float: right;
-					color: rgb(200, 200, 200);
-					font-size: 2.5vw;
-					cursor: pointer;
-					background-color: rgba(255, 255, 255, 0.6);
-					border-radius: 50%;
-					width: 2.5vw;
-					height: 2.5vw;
-					text-align: center;
-					vertical-align: baseline;
-					line-height: 2.3vw;
-				}
-				#reloadBtn {
-					position: absolute;
-					bottom: 2vw;
-					background-image: radial-gradient(100% 100% at 100% 0, #5adaff 0, #5468ff 100%);
-					border: 0;
-					border-radius: 4.25%;
-					width: 15vw;
-					height: 4vh;
-					color: white;
-					cursor: pointer;
-				}
-				#bodyBackground {
-					display:inline-block;
-					width:100%;
-				}
-		   `; return something;})());
-		{
-			let toolbox = document.createElement("div");
-			toolbox.innerHTML = `<div id='closeToolbox'>×</div>
-				<div>
-					<form oninput='blurAmount.value=parseFloat(blur.value); rainbowSpeedAmount.value=parseFloat(Math.pow(10, rainbowSpeed.value));'>
-						Opacity: <input id='translucent' type='range' min='0' max='1' step='0.001'></input><br/>
-						Blur amount: <input id='blur' type='range' min='0' max='50' step='0.1' name='blur'></input>
-						<input id='blurAmount' name='blurAmount' readonly='true' style='background-color:light-gray;'></input><br/>
-						Auto indicator rainbow:<input id='autoAttendanceRainbow' type='checkbox'></input><br/>
-						Revert to original layout:<input id='originalLayout' type='checkbox'/><br/>
-						Dark mode:<input id='darkMode' type='checkbox'/><br/>
-						Background CSS property (value only):<input type='text' id='bodyBackground'/><br/>
-						Rainbow speed: <input type='range' min='-1' max='3' step='0.01' id='rainbowSpeed'></input>
-						<input id='rainbowSpeedAmount' name='rainbowSpeedAmount' readonly='true' style='background-color:light-gray;'></input><br/>
-						Profile picture URL (feed view):<input type='text' id='url'/>
-					</form>
-				</div>
-				<button id='reloadBtn'>&nbsp;Apply changes and reload page</button>`;
-			toolbox.setAttribute("id","toolbox");
-			toolbox.style.display = "none";
-			document.querySelector(".main-layout").appendChild(toolbox);
-		}
-		// Makes toolbox reachable from Daymap.
-		var tools = setInterval(() => {if(document.querySelector("li[menu-id='60']")) {document.querySelector("li[menu-id='60']").parentNode.innerHTML = "<tr><div class='tools' style='border-left: 2px solid #a0d7f1; text-align: left; padding: 7px 11px;' onclick='document.getElementById(`toolbox`).style.display = `block`;'>Daymap Graphics Command Center</div></div></tr><style>.tools:hover{background-color:#e5e5e5}</style>"; clearInterval(tools)}}, 50);
-		{
-			let bodyUnderlay = document.createElement("div");
-			bodyUnderlay.setAttribute("id", "bodyUnderlay");
-			document.querySelector("head").innerHTML += "<style>#bodyUnderlay {position: fixed; width: 100%; height: 100%; top: 0; z-index: -2147483647;}</style>";
-			document.querySelector("body").appendChild(bodyUnderlay);
-		}
-		document.querySelector("#reloadBtn").innerHTML = '<svg width="0.75vw" height="0.75vw" viewBox="0 0 24 24" class="_18zn2ntb"><path fill="currentColor" d="M18.071 18.644c-3.532 3.232-9.025 3.13-12.452-.297a9.014 9.014 0 0 1-2.636-6.866 1 1 0 0 1 1.997.105 7.014 7.014 0 0 0 2.053 5.346c2.642 2.642 6.856 2.747 9.606.31h-1.81a1 1 0 1 1 0-2h4.242a1 1 0 0 1 1 1v4.243a1 1 0 0 1-2 0v-1.84zM7.361 6.757h1.81a1 1 0 0 1 0 2H4.93a1 1 0 0 1-1-1V3.515a1 1 0 1 1 2 0v1.84c3.532-3.231 9.025-3.13 12.452.298a9.014 9.014 0 0 1 2.636 6.866 1 1 0 1 1-1.997-.105 7.014 7.014 0 0 0-2.053-5.346c-2.642-2.642-6.856-2.747-9.606-.31z"></path></svg>' + document.querySelector("#reloadBtn").innerHTML;
-		document.querySelector("#blurAmount").value = getItem("blurAmount");
-		document.querySelector("#bodyBackground").value = getItem("bodyBackground");
-		document.querySelector("#translucent").setAttribute("value", getItem("translucentMode"));
-		document.querySelector("#blur").setAttribute("value", getItem("blurAmount"));
-		document.querySelector("#rainbowSpeed").setAttribute("value", Math.log10(getItem("rainbowSpeed")));
-		document.querySelector("#rainbowSpeedAmount").setAttribute("value", getItem("rainbowSpeed"));
-		document.querySelector("#url").value = getItem("url");
-		if(getItem("autoAttendanceRainbow") != "0" && getItem("autoAttendanceRainbow")) {
-			document.querySelector("#autoAttendanceRainbow").setAttribute("checked", 1);
-		}
-		if(getItem("originalLayout") != 0 && getItem("originalLayout")) {
-			document.querySelector("#originalLayout").setAttribute("checked", 1);
-		}
-		if(document.cookie != "" ? parseInt(document.cookie.substr(document.cookie.length - 1, 1)) == 1 : 0) {
-			document.querySelector("#darkMode").setAttribute("checked", 1);
-		}
 		// Easter eggs :D
-		let shosty = "https://cdn.discordapp.com/attachments/1162609296362704907/1216998409823850567/shostakovich.png?ex=66026d17&is=65eff817&hm=bb4cb284c14fe5ca2b91a3c5f43982c669b0c100929e135ef361f0f077b68487&";
+		let bodyUnderlay = document.createElement("div");
+		bodyUnderlay.setAttribute("id", "bodyUnderlay");
+		document.querySelector("head").innerHTML += "<style>#bodyUnderlay {position: fixed; width: 100%; height: 100%; top: 0; z-index: -2147483647;}</style>";
+		document.querySelector("body").appendChild(bodyUnderlay);
+		//let shosty = "https://cdn.discordapp.com/attachments/1162609296362704907/1216998409823850567/shostakovich.png?ex=66026d17&is=65eff817&hm=bb4cb284c14fe5ca2b91a3c5f43982c669b0c100929e135ef361f0f077b68487&";
 		if(getItem("bodyBackground") != "" && getItem("bodyBackground") != undefined) {
 			if(getItem("bodyBackground") === "surprise me") {
 				let backgrounds = [
@@ -362,34 +279,19 @@ var r50d = [];
 					document.querySelector("#bodyUnderlay").innerHTML += "<div class='r50d' style='width:" + anything[0] + "px;height:" + anything[0] + "px;top:" + anything[2] + "vh;left:" + anything[3] + "vw;position:absolute;border-radius:" + constrain(Math.random() * 50, 0, 50) + "%;background-color:rgba(" + constrain(anything[1] * anything[4], 0, 255) + ", " + constrain((anything[1] > 127.5 ? (127.5 - anything[1]) : anything[1]) * anything[4], 0, 255) + ", " + constrain((255 - anything[1]) * anything[4], 0, 255) + ", " + Math.random() / 1.5 +");transform:rotate("+ anything[5] + "deg);'></div>";
 					r50d.push("1," + Math.random() / 100 + "," + anything[5] + "," + (Math.random() - 0.5) * 15);
 				}
+				setInterval(() => {
+					for(i = 0; i < document.querySelectorAll(".r50d").length; i++) {
+						document.querySelectorAll(".r50d")[i].style.transform = "scale(" + r50d[i].split(",")[0] + ", " + r50d[i].split(",")[0] + ") rotate(" + r50d[i].split(",")[2] + "deg)";
+						r50d[i] = (parseFloat(r50d[i].split(",")[0]) + parseFloat(r50d[i].split(",")[1])) + "," + (parseFloat(r50d[i].split(",")[0]) >= 1.1 ? Math.abs(parseFloat(r50d[i].split(",")[1])) * -1 : parseFloat(r50d[i].split(",")[0]) <= 0.9 ? Math.abs(r50d[i].split(",")[1]) : parseFloat(r50d[i].split(",")[1])) + "," + (parseFloat(r50d[i].split(",")[2]) + parseFloat(r50d[i].split(",")[3])) + "," + parseFloat(r50d[i].split(",")[3]); i = i >= r50d.length - 1 ? 0 : i + 1;
+					}
+				}, 30);
 			}
 			if(getItem("bodyBackground") === "url('https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg')") {
 				setItem("bodyBackground", "black url('https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg')");
 				window.location.href = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
 			}
 		}
-		i = 0;
-		setInterval(() => {
-			for(i = 0; i < document.querySelectorAll(".r50d").length; i++) {
-				document.querySelectorAll(".r50d")[i].style.transform = "scale(" + r50d[i].split(",")[0] + ", " + r50d[i].split(",")[0] + ") rotate(" + r50d[i].split(",")[2] + "deg)";
-				r50d[i] = (parseFloat(r50d[i].split(",")[0]) + parseFloat(r50d[i].split(",")[1])) + "," + (parseFloat(r50d[i].split(",")[0]) >= 1.1 ? Math.abs(parseFloat(r50d[i].split(",")[1])) * -1 : parseFloat(r50d[i].split(",")[0]) <= 0.9 ? Math.abs(r50d[i].split(",")[1]) : parseFloat(r50d[i].split(",")[1])) + "," + (parseFloat(r50d[i].split(",")[2]) + parseFloat(r50d[i].split(",")[3])) + "," + parseFloat(r50d[i].split(",")[3]); i = i >= r50d.length - 1 ? 0 : i + 1;
-			}
-		}, 30);
-		// A bit more for the toolbox.
-		document.querySelector("#closeToolbox").addEventListener("click", () => {
-			document.querySelector("#toolbox").style.display = "none";
-		});
-		document.querySelector("#reloadBtn").addEventListener("click", () => {
-			setItem("bodyBackground", document.querySelector("#bodyBackground").value);
-			setItem("translucentMode", parseFloat(document.querySelector("#translucent").value));
-			setItem("blurAmount", document.querySelector("#blur").value);
-			setItem("rainbowSpeed", Math.pow(10, document.querySelector("#rainbowSpeed").value));
-			setItem("url", document.querySelector("#url").value);
-			location.reload();
-		});
-		document.querySelector("#autoAttendanceRainbow").addEventListener("click", () => {setItem("autoAttendanceRainbow", getItem("autoAttendanceRainbow") != 0 ? 0 : 1);});
-		document.querySelector("#originalLayout").addEventListener("click", () => {setItem("originalLayout", getItem("originalLayout") != 0 && getItem("originalLayout") ? 0 : 1);});
-		document.querySelector("#darkMode").addEventListener("click", () => {let d = new Date(); let _dark = (document.cookie != "" ? parseInt(document.cookie.substr(document.cookie.length - 1, 1)) == 1 ? "darkMode=0": "darkMode=1" : "darkMode=1") + ";path=/;expires=" + new Date((d.setFullYear(d.getFullYear() + 10))).toUTCString(); document.cookie.split(";").forEach(function(c) { document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");}); document.cookie = _dark;});
+		
 		// Be honest, you probably did actually submit it on Turnitin.
 		// As far as I remember, this is the oldest feature of the entire extension, along with changing the colour of the attendance indicator.
 		for(i = 0; i < document.querySelectorAll(".itm .Error").length; i ++) {
@@ -405,10 +307,8 @@ var r50d = [];
 			attendanceRainbows.push(new rainbow(attendanceEls[i], getItem("rainbowSpeed"), getItem("autoAttendanceRainbow") != 0 && getItem("autoAttendanceRainbow") ? 1 : 0))
 		}
 		// To make random numbers into colours that actually look good, there is a method by @WeatherWonders: https://www.khanacademy.org/computer-programming/the-randomish-quiz/6515084802260992
-		if(attendanceRainbows.length) {
-			setInterval(() => {for(let i = 0; i < attendanceRainbows.length; i++) {attendanceRainbows[i].update();}}, 10);
-			setInterval(() => {for(let i = 0; i < attendanceRainbows.length; i++) {attendanceRainbows[i].changeDirection();}}, 5000);
-		}
+		setInterval(() => {for(let i = 0; i < attendanceRainbows.length; i++) {attendanceRainbows[i].update();}}, 20);
+		setInterval(() => {for(let i = 0; i < attendanceRainbows.length; i++) {attendanceRainbows[i].changeDirection();}}, 5000);
 		// Getting the element that describes the current time
 		if(document.querySelector(".diaryWeek")) {
 			document.querySelector(".diaryWeek").addEventListener("click", () => {
@@ -416,44 +316,8 @@ var r50d = [];
 			});
 		}
 		if(document.querySelector(".diaryDay")) {
-			switch(Date().substr(4, 3)) {
-				case "Jan":
-					date = Date().substr(11, 4) + "-01-" + Date().substr(8, 2);
-					break;
-				case "Feb":
-					date = Date().substr(11, 4) + "-02-" + Date().substr(8, 2);
-					break;
-				case "Mar":
-					date = Date().substr(11, 4) + "-03-" + Date().substr(8, 2);
-					break;
-				case "Apr":
-					date = Date().substr(11, 4) + "-04-" + Date().substr(8, 2);
-					break;
-				case "May":
-					date = Date().substr(11, 4) + "-05-" + Date().substr(8, 2);
-					break;
-				case "Jun":
-					date = Date().substr(11, 4) + "-06-" + Date().substr(8, 2);
-					break;
-				case "Jul":
-					date = Date().substr(11, 4) + "-07-" + Date().substr(8, 2);
-					break;
-				case "Aug":
-					date = Date().substr(11, 4) + "-08-" + Date().substr(8, 2);
-					break;
-				case "Sep":
-					date = Date().substr(11, 4) + "-09-" + Date().substr(8, 2);
-					break;
-				case "Oct":
-					date = Date().substr(11, 4) + "-10-" + Date().substr(8, 2);
-					break;
-				case "Nov":
-					date = Date().substr(11, 4) + "-11-" + Date().substr(8, 2);
-					break;
-				case "Dec":
-					date = Date().substr(11, 4) + "-12-" + Date().substr(8, 2);
-					break;
-			}
+			let months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+			date = Date().substr(11, 4) + "-" + (months.indexOf(Date().substr(4, 3)) < 10 ? "0" : "") + (months.indexOf(Date().substr(4, 3)) + 1) + "-" + Date().substr(8, 2);
 			let time = Number(Date().substr(16, 2) + Date().substr(19, 2));
 			if(document.querySelector(".diaryDay[data-date='"+date+"']")) {
 				let lessonEls = [];
@@ -484,7 +348,7 @@ var r50d = [];
 			if(lessonEl != undefined) {
 				lessonEl.style.transformOrigin = "50% 50%";
 				lessonEl.style.borderRadius = "5px";
-				lessonEl.innerHTML += "<style>@keyframes lessonAnimation {from, to {border-left: 5px solid #64b0e3} 50% {border-left: 5px solid #5eb0e6}} .lessonEl {animation: lessonAnimation 15s infinite;}</style>";
+				lessonEl.innerHTML += "<style>@keyframes lessonAnimation {from, to {border-left: 5px solid #64b0e3} 50% {border-left: 5px solid #5eb0e6}} .lessonEl {animation: lessonAnimation 10s infinite;}</style>";
 				lessonEl.classList.add("lessonEl");
 				document.querySelector(".lessonEl .t").addEventListener("click", () => {
 					lessonEl.style.borderRadius = prompt("Enter the radius", "5px");
@@ -543,8 +407,11 @@ var r50d = [];
 				document.querySelector("#bCalendar").style.backgroundColor = "rgba(31, 157, 217, " + translucentness * 1.6 + ")";
 				document.querySelector("#btnDiary").style.backgroundColor = "rgba(31, 157, 217, " + translucentness * 1.6 + ")";
 			}
-			for(i = 0; i < document.querySelectorAll(".card, .msg, .ditm, .Toolbar, .ditm .t, .ditm .c, .hasDatepicker, #tblTt tbody tr td, #tblTt tbody tr td .ttCell, .msg, #bCalendar, #btnDiary").length; i ++) {
-				document.querySelectorAll(".card, .msg, .ditm, .Toolbar, .ditm .t, .ditm .c, .hasDatepicker, #tblTt tbody tr td, #tblTt tbody tr td .ttCell, .msg, #bCalendar, #btnDiary")[i].style.backdropFilter = "blur(" + getItem("blurAmount") + "px)";
+			// Turns out a lot of the things here were unnecessarily blurred, but even with just cards and the toolbar, it's really slow.
+			if(getItem("blurAmount") && getItem("blurAmount") != 0) {
+				for(i = 0; i < document.querySelectorAll(".card, .Toolbar").length; i ++) {
+					document.querySelectorAll(".card, .Toolbar")[i].style.backdropFilter = "blur(" + getItem("blurAmount") + "px)";
+				}
 			}
 			for(i = 0; i < document.querySelectorAll(".nav-container, .nav-user-container, .rgGroupPanel td").length; i++) {
 				document.querySelectorAll(".nav-container, .nav-user-container, .rgGroupPanel td")[i].style.backgroundColor = "rgba(" + (dark ? "37, 37, 37," : "237, 235, 233,") + translucentness * 0.7 + ")";
@@ -561,8 +428,7 @@ var r50d = [];
 				}
 			}, 500);
 		}
-		
-		window.setInterval(() => {
+		window.setInterval(() => { // 0-1ms per iteration, 7-8ms if condition is met
 			// Reverting the messages to how they looked previously.
 			if(document.querySelector(".fa-mail-bulk") ? document.querySelector(".fa-mail-bulk").outerHTML.indexOf("img") == -1 : 0) {
 				let length = document.querySelectorAll(".fa-mail-bulk").length;
@@ -586,7 +452,11 @@ var r50d = [];
 				}
 				for(i = 0; i < document.querySelectorAll(".msg").length; i ++) {
 					document.querySelectorAll(".msg")[i].style.background = "rgba(" + (dark ? "37, 37, 37," : "237, 235, 233,") + translucentness + ")";
-					document.querySelectorAll(".msg")[i].style.backdropFilter = "blur(" + getItem("blurAmount") + "px)";
+				}
+				if(getItem("blurAmount") && getItem("blurAmount") != 0) {
+					for(i = 0; i < document.querySelectorAll(".msg").length; i ++) {
+						document.querySelectorAll(".msg")[i].style.backdropFilter = "blur(" + getItem("blurAmount") + "px)";
+					}
 				}
 				for(i = 0; i < document.querySelectorAll(".item-container").length; i ++) {
 					document.querySelectorAll(".item-container")[i].style.background = "rgba(255, 255, 255, 0)";
@@ -612,6 +482,7 @@ var r50d = [];
 			}
 		}, 100);
 		// Reverts Daymap to the (better) original layout.
+		console.log(getItem("originalLayout"));
 		if(getItem("originalLayout") && getItem("originalLayout") != 0) {
 			let megaphone = window.setInterval(() => {
 				if(document.querySelector(".atooltip")) { // If there's an announcement, it moves it to the post ticker
@@ -648,127 +519,145 @@ var r50d = [];
 					`;
 					document.querySelector(".main-layout").appendChild(link);
 					window.clearInterval(megaphone);
-					document.querySelector("header").remove();
+					if(document.querySelector("header")) {
+						document.querySelector("header").remove();
+					}
 				} else if (!document.querySelector(".header-announcements[style='display:block']")) {
 					window.clearInterval(megaphone);
-					document.querySelector("header").remove();
+					if(document.querySelector("header")) {
+						document.querySelector("header").remove();
+					}
 				}
 			}, 100);
 			// Adds the header from the old Daymap after the other one's been removed
-			window.setInterval(() => {
+			let headerInterval = window.setInterval(() => {
 				if(document.querySelector("daymap-nav-item[menu-id='1151'] .menu-item-container .menu-item .menu-message-count")) {
 					document.querySelector("body").prepend((() => {
-					let header = document.createElement("div");
-					header.innerHTML = `
-				<div class="header" style="background-color: rgba(255, 255, 255, 0.416); backdrop-filter: blur(0px);">
-					<div role="navigation" class="menuContainer" id="menuContainer">
-						<div id="mnu"><table class="lpMenuTop"><tbody><tr><td href="/daymap/student/portfolio.aspx" menuid="272">Portfolio</td><td href="/daymap/default.aspx?hideNav=1" menuid="1">Day Plan</td><td href="/daymap/student/classes.aspx" menuid="4">Classes</td><td href="" menuid="5">Assessment</td><td href="" menuid="87">Communications</td><td href="" menuid="67">Calendars</td><td href="javascript:window.open('/Depot/', '_blank');" menuid="261">Depot</td><td href="" menuid="16">Tools</td></tr></tbody></table></div>
-					</div>
-					<div class="header-logo">
-						<div class="landing-button" id="divLandingButton">
-							<i class="mdi mdi-menu" aria-hidden="true"></i>
+						let header = document.createElement("div");
+						header.innerHTML = `
+						<div class="header" style="background-color: rgba(255, 255, 255, 0.416); backdrop-filter: blur(0px);">
+							<div role="navigation" class="menuContainer" id="menuContainer">
+								<div id="mnu"><table class="lpMenuTop"> <!-- Moving the table tag onto the next line breaks it. I have no idea why. -->
+									<tbody>
+										<tr>
+											<td href="/daymap/student/portfolio.aspx">Portfolio</td>
+											<td href="/daymap/default.aspx?hideNav=1" menuid="1">Day Plan</td>
+											<td href="/daymap/student/classes.aspx" menuid="2">Classes</td>
+											<td menuid="3">Assessment</td>
+											<td menuid="4">Communications</td>
+											<td menuid="5">Calendars</td>
+											<td href="javascript:window.open('/Depot/', '_blank');">Depot</td>
+										</tr>
+									</tbody>
+								</table></div>
+							</div>
+							<div class="header-logo">
+								<div class="landing-button" id="divLandingButton">
+									<i class="mdi mdi-menu" aria-hidden="true"></i>
+								</div>
+								<a href="/daymap">
+									<img src="https://portal-beta.daymap.net/daymapidentity/logo.png" class="logo" alt="" style="margin-top: -1.5px; margin-left: 43px; width: 122px;" class="logo-img">
+								</a>
+							</div>
+							<div class="header-user">
+								<div class="notification">
+									<a href="/daymap/coms/Messaging.aspx" id="divAlertCount"><i class="mdi mdi-message" title="Go to my messages"></i>` + (!document.querySelector("daymap-nav-item[menu-id='1151'] .menu-item-container .menu-item .menu-message-count.hidden") ? `<div class="notification-amount" title="New messages"> ${(document.querySelector("daymap-nav-item[menu-id='1151'] .menu-item-container .menu-item .menu-message-count").innerHTML ? document.querySelector("daymap-nav-item[menu-id='1151'] .menu-item-container .menu-item .menu-message-count").innerHTML : ``)}</div>` : ``) + `</a>
+								</div>
+								<div id="divUserAvatar" class="avatar" style="background-Image: url('/DayMap/Images/profile-icon-grey.png'), url('/DayMap/Images/profile-icon-grey.png');" tabindex="1">
+								<div class="vertical-menu open-from-right user-menu" style="top:45px"><a class="menu-label">Logged in as ` + document.querySelector(".name-text").innerHTML + `</a><a tabindex="3">Sign Out</a><a tabindex="4">My Details</a></div></div>
+							</div>
 						</div>
-						<a href="/daymap">
-							<img src="https://portal-beta.daymap.net/daymapidentity/logo.png" class="logo" alt="" style="margin-top: -1.5px; margin-left: 43px; width: 122px;" class="logo-img">
-						</a>
-					</div>
-					<div class="header-user">
-						<div class="notification">
-							<a href="/daymap/coms/Messaging.aspx" id="divAlertCount"><i class="mdi mdi-message" title="Go to my messages"></i>` + (!document.querySelector("daymap-nav-item[menu-id='1151'] .menu-item-container .menu-item .menu-message-count.hidden") ? `<div class="notification-amount" title="New messages"> ${(document.querySelector("daymap-nav-item[menu-id='1151'] .menu-item-container .menu-item .menu-message-count").innerHTML ? document.querySelector("daymap-nav-item[menu-id='1151'] .menu-item-container .menu-item .menu-message-count").innerHTML : ``)}</div>` : ``) + `</a>
-						</div>
-						<div id="divUserAvatar" class="avatar" style="background-Image: url('/DayMap/Images/profile-icon-grey.png'), url('/DayMap/Images/profile-icon-grey.png');" tabindex="1">
-						<div class="vertical-menu open-from-right user-menu" style="top:45px"><a class="menu-label">Logged in as ` + document.querySelector(".name-text").innerHTML + `</a><a tabindex="3">Sign Out</a><a tabindex="4">My Details</a></div></div>
-					</div>
-				</div>
-				<style>
-					 .header {
-						 transition: all 0.5s ease 0s;
-						 position: fixed;
-						 left: 0px;
-						 right: 0px;
-						 top: 0px;
-						 height: 78px;
-						 box-shadow: rgba(0, 0, 0, 0.05) 0px 0px 1em 0.5em;
-						 border-bottom: 1px solid gainsboro;
-						 background-color: rgb(255, 255, 255);
-						 z-index: 1100;
-						 text-align: center;
-						 display: flex;
-						 flex-flow: row wrap;
-						 justify-content: space-between;
-						 align-items: center;
-					}
-					.menuContainer {
-						width: 100%;
-						font-size: .8rem;
-						position: relative;
-					}
-					.menuContainer .lpMenuTop {
-						cursor: pointer;
-					}
-					.menuContainer .lpMenuTop:hover td, .menuContainer .lpMenuTop.active td {
-						color: #6f6f6f;
-					}
-					.menuContainer .lpMenuTop td {
-						color: #bcbcbc;
-						background-color: white;
-						border-bottom: 1px solid white;
-						border-left: 2px solid transparent;
-						padding: 4px 9px 7px 9px;
-						transition: border-bottom .5s, color .2s;
-						white-space: nowrap;
-					}
-					.menuContainer .lpMenuTop td:hover, .menuContainer .lpMenuTop td.active {
-						border-left: 2px solid #1F9DD9;
-						background-color: #f0f0f0;
-						color: #000;
-					}
-					.menuContainer div.lpMenu {
-						cursor: pointer;
-						position: absolute;
-						box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 8px rgba(0, 0, 0, 0.2);
-						z-index: 1425;
-					}
-					.menuContainer div.lpMenu table.lpMenu {
-						background-color: white;
-						color: #3c3c3c;
-					}
-					.menuContainer div.lpMenu table.lpMenu tr .lpMenuTd1, .menuContainer div.lpMenu table.lpMenu tr .lpMenuTd1a {
-						display: none;
-					}
-					.menuContainer div.lpMenu table.lpMenu tr .lpMenuTd2, .menuContainer div.lpMenu table.lpMenu tr .lpMenuTd2a {
-						text-align: left;
-						padding: 7px 11px;
-					}
-					.menuContainer div.lpMenu table.lpMenu tr .lpMenuTd2 {
-						border-left: 2px solid #a0d7f1;
-					}
-					.menuContainer div.lpMenu table.lpMenu tr .lpMenuTd2a {
-						border-left: 2px solid #1F9DD9;
-					}
-					.menuContainer div.lpMenu table.lpMenu tr:hover {
-						background-color: #f0f0f0;
-						color: #000;
-					}
-				</style>`;
-					document.querySelector("daymap-nav").remove();
-					document.querySelector("daymap-menu").remove();
-					document.querySelector(".main-layout").style.marginLeft = "0px";
-					document.querySelector(".main-layout").style.marginTop = "38.2px";
-					for(i = 0; i < document.querySelectorAll(".card").length; i ++) {
-						document.querySelectorAll(".card")[i].style.border = "1px solid " + (dark ? "gray" : "gainsboro");
-						document.querySelectorAll(".card")[i].style.borderRadius = "4px";
-					}
-					for(i = 0; i < header.querySelectorAll("td").length; i++) {
-						header.querySelectorAll("td")[i].style.backgroundColor = "rgba(" + (dark ? "37, 37, 37," : "237, 235, 233,") + getItem("translucentMode") * 1.2 + ")";
-					}
-					if(getItem("url")) {
-						header.querySelector("#divUserAvatar").style.background = "url(" + (getItem("url") == "shosty" ? shosty : getItem("url")) + ") center / cover no-repeat";
-					}
-					header.querySelector(".header").style.backgroundColor = "rgba(" + (dark ? "37, 37, 37," : "237, 235, 233,") + getItem("translucentMode") * 1.3 + ")";
-					header.querySelector(".header").style.backdropFilter = "blur(" + getItem("blurAmount") + "px)";
-					return header;
+						<style>
+							 .header {
+								 transition: all 0.5s ease 0s;
+								 position: fixed;
+								 left: 0px;
+								 right: 0px;
+								 top: 0px;
+								 height: 78px;
+								 box-shadow: rgba(0, 0, 0, 0.05) 0px 0px 1em 0.5em;
+								 border-bottom: 1px solid gainsboro;
+								 background-color: rgb(255, 255, 255);
+								 z-index: 1100;
+								 text-align: center;
+								 display: flex;
+								 flex-flow: row wrap;
+								 justify-content: space-between;
+								 align-items: center;
+							}
+							.menuContainer {
+								width: 100%;
+								font-size: .8rem;
+								position: relative;
+							}
+							.menuContainer .lpMenuTop {
+								cursor: pointer;
+							}
+							.menuContainer .lpMenuTop:hover td, .menuContainer .lpMenuTop.active td {
+								color: #6f6f6f;
+							}
+							.menuContainer .lpMenuTop td {
+								color: #bcbcbc;
+								background-color: white;
+								border-bottom: 1px solid white;
+								border-left: 2px solid transparent;
+								padding: 4px 9px 7px 9px;
+								transition: border-bottom .5s, color .2s;
+								white-space: nowrap;
+							}
+							.menuContainer .lpMenuTop td:hover, .menuContainer .lpMenuTop td.active {
+								border-left: 2px solid #1F9DD9;
+								background-color: #f0f0f0;
+								color: #000;
+							}
+							.menuContainer div.lpMenu {
+								cursor: pointer;
+								position: absolute;
+								box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 8px rgba(0, 0, 0, 0.2);
+								z-index: 1425;
+							}
+							.menuContainer div.lpMenu table.lpMenu {
+								background-color: white;
+								color: #3c3c3c;
+							}
+							.menuContainer div.lpMenu table.lpMenu tr .lpMenuTd1, .menuContainer div.lpMenu table.lpMenu tr .lpMenuTd1a {
+								display: none;
+							}
+							.menuContainer div.lpMenu table.lpMenu tr .lpMenuTd2, .menuContainer div.lpMenu table.lpMenu tr .lpMenuTd2a {
+								text-align: left;
+								padding: 7px 11px;
+							}
+							.menuContainer div.lpMenu table.lpMenu tr .lpMenuTd2 {
+								border-left: 2px solid #a0d7f1;
+							}
+							.menuContainer div.lpMenu table.lpMenu tr .lpMenuTd2a {
+								border-left: 2px solid #1F9DD9;
+							}
+							.menuContainer div.lpMenu table.lpMenu tr:hover {
+								background-color: #f0f0f0;
+								color: #000;
+							}
+						</style>`;
+						document.querySelector("daymap-nav").remove();
+						document.querySelector("daymap-menu").remove();
+						document.querySelector(".main-layout").style.marginLeft = "0px";
+						document.querySelector(".main-layout").style.marginTop = "38.2px";
+						for(i = 0; i < document.querySelectorAll(".card").length; i ++) {
+							document.querySelectorAll(".card")[i].style.border = "1px solid " + (dark ? "gray" : "gainsboro");
+							document.querySelectorAll(".card")[i].style.borderRadius = "4px";
+						}
+						for(i = 0; i < header.querySelectorAll("td").length; i++) {
+							header.querySelectorAll("td")[i].style.backgroundColor = "rgba(" + (dark ? "37, 37, 37," : "237, 235, 233,") + getItem("translucentMode") * 1.2 + ")";
+						}
+						if(getItem("url")) {
+							header.querySelector("#divUserAvatar").style.background = "url(" +  getItem("url") + ") center / cover no-repeat";
+						}
+						header.querySelector(".header").style.backgroundColor = "rgba(" + (dark ? "37, 37, 37," : "237, 235, 233,") + getItem("translucentMode") * 1.3 + ")";
+						header.querySelector(".header").style.backdropFilter = "blur(" + getItem("blurAmount") + "px)";
+						return header;
 					})());
+				} else {
+					clearInterval(headerInterval);
 				}
 			}, 50);
 			// Making the header's dropdown menus work.
