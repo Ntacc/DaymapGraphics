@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<style>
+			#main {
+				width: 670px;
+				height: 400px;
+				font-family: "Helvetica";
+				color: white;
+				font-size: 10pt;
+				padding-bottom: 30px;
+			}
+			body {
+				background: #1e1e1e;
+				scrollbar-color: cornflowerblue #222233;
+				scrollbar-width: thin;
+				padding-left: 20px;
+				padding-top: 3px;
+			}
+			/*#showGuide {
+				/*background-image: radial-gradient(farthest-corner at 120% -25%, aquamarine, lightseagreen);*/
+				/*border: 1px outset mediumturquoise;
+				border: none;
+				padding: 5px;
+				mask-image: radial-gradient(rgba(0, 0, 0, 1) 20%, rgba(0, 0, 0, 0) 80%);
+				font-family: "Brush Script MT", cursive;
+				border: none;
+				/*border-radius: 5px;
+				background-color: transparent;
+				/*border: 0.8px dotted lightgoldenrodyellow;
+				font-size: 1em;
+				color: white;
+				padding-left: 0px;
+				margin-left: 5px;
+				transition: padding-left 0.2s;
+			}*/
+			.btn0 {
+				border: none;
+				/*border-radius: 5px;*/
+				background-color: transparent;
+				/*border: 0.8px dotted lightgoldenrodyellow;*/
+				font-size: 1em;
+				color: #eeeeee;
+				padding-left: 0px;
+				margin-left: 5px;
+				transition: padding-left 0.2s;
+				cursor: pointer;
+			}
+			.btn0:hover {
+				padding-left: 10px;
+				transition: padding-left 0.2s;
+				border-left: 3px solid #444444;
+			}
+			#bodyBackground {
+				display:inline-block;
+				width:100%;
+			}
+			#submit {
+				/*font-family: monospace;*/
+				margin: 2px;
+				padding: 3px 10px 3px 10px;
+				color: black;
+				border: 2px solid #444444;
+				border-radius: 15px;
+				transition: margin 0.2s ease-in;
+				cursor: pointer;
+				background-image: linear-gradient(135deg, palegreen, lightsteelblue);
+			}
+			#submit:hover {
+				margin: 0.5px 3.5px 3.5px 0.5px;
+				box-shadow: #555555 2px 1.5px 3px;
+				transition: margin 0.2s ease-in, box-shadow 0.2s;
+			}
+			tr {
+				height: 20px;
+			}
+			h2 {
+				font-family: monospace;
+			}
+			.a, h3, #bbheader {
+				background-clip: text;
+				color: transparent;
+			}
+			.a0 {
+				background-image: linear-gradient(135deg, cornflowerblue, darkorchid);
+			}
+			input[name="translucent"] {
+				accent-color: mediumslateblue;
+			}
+			input[name="blur"] {
+				accent-color: steelblue;
+			}
+			input[name="rainbowSpeed"] {
+				accent-color: royalblue;
+			}
+			input[type="text"] {
+				background-color: linen;
+				width: 100%;
+			}
+			input[type="range"] {
+				cursor: grab;
+			}
+			input[type="range"]:active {
+				cursor: grabbing;
+			}
+			input[readonly="true"] {
+				background-color: whitesmoke;
+				font-family: monospace;
+				width: 100px;
+				cursor: default;
+			}
+			input[type="text"], input[readonly="true"] {
+				border-radius: 5px;
+			}
+			input[type="text"] {
+				border-radius: 5px;
+			}
+			input[type="checkbox"] {
+				cursor: pointer;
+				accent-color: paleturquoise;
+			}
+			.square {
+				width: 30px;
+				height: 30px;
+				margin: 5px;
+				display: inline-block;
+				transition: transform 1s, opacity 1s;
+				animation: disappear1 1s;
+			}
+			#squares {
+				position: fixed;
+				bottom: 0px;
+				right: -20px;
+				z-index: -100;
+				visibility: visible;
+				transition: transform 1s, opacity 1s;
+				animation: disappear0 1s;
+				width: 100vw;
+			}
+			.disappear {
+				transform: rotate(90deg) scale(10);
+				opacity: 0;
+				transition: all 1s;
+			}
+			.disappear .square {
+				transform: rotate(360deg);
+				margin: 50px;
+				transition: all 2s;
+			}
+			@keyframes disappear0 {
+				0% {
+					transform: rotate(90deg) scale(10);
+					opacity: 0;
+				}
+				100% {
+					transform: none;
+					opacity: 1;
+				}
+			}
+			@keyframes disappear1 {
+				0% {
+					transform: rotate(360deg);
+				}
+				100% {
+					transform: none;
+					margin: 5px;
+				}
+			}
+			.stuff {
+				margin-left: 5px;
+				padding-bottom: 10px;
+			}
+			.stuff div {
+				margin-left: 0px;
+			}
+			.stuff div p {
+				margin: 0px;
+				padding: 0px;
+				margin-left: 5px;
+			}
+			.stuff h4 {
+				margin-bottom: 5px;
+			}
+			#bbheader {
+				font-size: 100px;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="main">
+			<h2 class="a a0">Welcome to Daymap Graphics!</h2>
+			<div id="toolbox">
+				<form name="toolbox">
+					<table>
+						<thead>
+						</thead>
+						<tbody>
+							<tr><td>Opacity: <input name='translucent' type='range' min='0' max='1' step='0.001'></input></td></tr>
+							<tr><td>Blur amount (WARNING: VERY SLOW): <input name='blur' type='range' min='0' max='50' step='0.1' name='blur'></input><!--</td><td>-->
+								<input id='blurAmount' name='blurAmount' readonly='true' style='background-color:light-gray;'></input></td></tr>
+							<tr><td>Auto indicator rainbow:<input name='autoAttendanceRainbow' type='checkbox'></input></td></tr>
+							<tr title="If you change this setting, the page will reload to display the change."><td>Revert to original layout:<input name='originalLayout' type='checkbox'/></td></tr>
+							<tr><td>Starry background:<input name='starry' type='checkbox'/></td></tr>
+							<!-- DEPRECATED: use Daymap's in-built dark mode instead -->
+							<!-- This is done because Daymap's cookies cannot be read from the popup page, and storing dark mode in synced storage would be unreliable. -->
+							<!--Dark mode:<input name='darkMode' type='checkbox'/><br/>-->
+							<tr><td>Background CSS property (value only):<input type='text' name='bodyBackground'/></td></tr>
+							<tr><td>Rainbow speed: <input type='range' min='1' max='4' step='0.01' name='rainbowSpeed'></input><!--</td><td>-->
+								<input id='rainbowSpeedAmount' name='rainbowSpeedAmount' readonly='true' style='background-color:light-gray;'></input></td></tr>
+							<tr><td>Profile picture URL:<input type='text' name='url'/></td></tr>
+							<tr><td></td></tr>
+							<!--<tr><td><input type="submit" id="submit" value="Save changes" class="a1"></input></td></tr>-->
+						</tbody>
+					</table>
+				</form>
+				<div id="quotawarning" style="display: none;">Note: you have exceeded the MAX_WRITE_OPERATIONS_PER_MINUTE quota! you won't be able to change anything for the rest of the minute.</div>
+			</div>
+			<br/>
+			<div style="padding-bottom: 30px; padding-right: 40px;">
+				<p><button class="btn0 show"><b><span>Show guide</span></b></button></p>
+				<div id="guide" style="display: none;" class="stuff">
+					<h3 style="background-image: linear-gradient(135deg, lightcoral, mediumpurple);" id="guide">The Handbook</h3>
+					<div>
+						<h4>About the choppy sliders...</h4>
+							<p>Browsers don't let extensions update their storage more than 120 times in a minute. Making the changes from sliders show up live makes lots and lots of changes. I've limited saving settings to 4 times a second to avoid breaking things, which is why changing the sliders looks choppy.</p>
+						<h4>Opacity</h4>
+							<p>This slider allows you to control the opacity of the foreground of Daymap. Note that this does not change the opacity of the text.</p>
+						<h4>Blur</h4>
+							<p>This changes how much the foreground "cards" blur the background when they are translucent or transparent. This is measured in pixels. ALSO. IT MAKES DAYMAP REALLY LAGGY. I DON'T RECOMMEND YOU ENABLE IT. EVEN THOUGH IT LOOKS REALLY COOL.</p>
+						<h4>Auto indicator rainbow</h4>
+							<p>One of the first features of Daymap Graphics was being able to click on an indicator to change its colour. An easter egg was typing in "RAINBOW" as the colour would make it continuously change colour. Now, you can automate that process by checking this box.</p>
+						<h4>Original layout</h4>
+							<p>Revert the layout of Daymap pages to the layout from before the 30th of May 2022. (Personally, I recommend enabling this, as it fixes some of the main complaints with the new layout).</p>
+						<h4>Starry background</h4>
+							<p>Adds stars to the background. That's pretty much it. It's probably best to pair this with a darker background, but it's your Daymap, so the sky's the limit. Or the stars.</p>
+						<!--<h4>Dark mode</h4>
+							In the old layout of Daymap, there was no way to turn on dark mode. This allows turning on dark mode without needing the new layout. Turning on and off dark mode normally also is sometimes broken. This also makes the text lighter, which can be useful if using a darker background.
+						-->
+						<h4>Background CSS property</h4>
+							<p>Out of all the features, this is the hardest to use. This should take the form of a CSS background property. You can use colours, linear gradients, and more. I personally like <code>linear-gradient(to bottom right, #ABCDEF, turquoise, plum)</code>. However, you can also use images, including animated ones. The format for this should resemble <code>url('https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg')</code>. You may also wish to resize and reposition an image, so use the format <code>url('https://cdn.esawebb.org/archives/images/screen/carinanebula3.jpg') 0 0 / cover</code>.</p>
+						<h4>Rainbow speed</h4>
+							<p>Pretty self explanatory. If indicator rainbow is on, this just changes how fast the rainbow changes colour and moves around.</p>
+						<h4>Profile picture URL</h4>
+							<p>In feed view, there's a profile picture thingy that doesn't seem to get used. So if you want to change it, paste in a link to an image.</p>
+					</div>
+					<p>I hope this guide helped!</p>
+				</div>
+				<p><button class="btn0 show"><b><span>Show changelog</span></b></button></p>
+				<div style="display: none;" class="stuff">
+					<h3 style="background-image: linear-gradient(135deg, lightskyblue, lightgreen)">Changelog</h3>
+					<div>
+						<h4>8.0.0</h4>
+							<p>Revamped <code>popup.html</code>, made stars a feature (previously it was only an easter egg), tidied and optimised the code, moved most long strings to a new <code>resources.json</code>, changed <code>popup.html</code> to avoid exceeding the <code>MAX_WRITE_OPERATIONS_PER_MINUTE</code> quota (trying to avoid using workers), and changed the content script to display these changes live. A bit of a change in direction, may add more animations later.</p>
+					</div>
+				</div>
+				<p><button class="btn0 show" id="showsongbook" style="display:none;"><b><span>Show songbook</span></b></button></p>
+				<div style="display: none;" class="stuff">
+					<h3 style="background-image: linear-gradient(135deg, darkgoldenrod, coral)">Timeless Classics of Mallardia, Vol. 1</h3>
+					<div>
+						<h4>Rule, Mallardia!</h4>
+							<p>Quack quaaack quaaack qua-a-a-a-ack, quack quaaa-ack, quack quack,</p>
+							<p>Quack qua-a-a-a- -a-a-a-a-ack quack quack qua-a-a-a-ack quack,</p>
+					</div>
+				</div>
+				<!-- soon -->
+				<p><button class="btn1 show" style="display:none;"><b><span>Show bug book</span></b></button></p>
+				<div style="display: none;" class="stuff" id="bugbook">
+					<h1 id="bbheader">BUG BOOK</h1>
+				</div>
+			</div>
+		</div>
+		<div id="squares"></div>
+		<script src="popup.js"></script>
+	</body>
+</html>
