@@ -59,6 +59,7 @@ async function addBug(id) {
 window.setInterval(squareset, 100);
 
 const setStorage = () => {
+	let stor0 = Object.entries(stor2);
 	document.forms["toolbox"]["blurAmount"].value = parseFloat(document.forms["toolbox"]["blur"].value);
 	document.forms["toolbox"]["rainbowSpeedAmount"].value = Math.round(parseFloat(Math.exp(document.forms["toolbox"]["rainbowSpeed"].value * 1)) * 1000) / 1000;
 	document.forms["toolbox"]["translucent"].setAttribute("title", Math.round(document.forms["toolbox"]["translucent"].value * 100) + "%");
@@ -70,16 +71,29 @@ const setStorage = () => {
 	stor2.originalLayout = document.forms["toolbox"]["originalLayout"].checked ? 1 : 0;
 	stor2.autoAttendanceRainbow = document.forms["toolbox"]["autoAttendanceRainbow"].checked ? 1 : 0;
 	stor2.starry = document.forms["toolbox"]["starry"].checked ? 1 : 0;
-	browser.storage.sync.set(stor2).catch(() => {console.log("hi");document.querySelector("#quotawarning").style.display = "block"});
+	//stor2.cardColour = document.forms["toolbox"]["card"].value;
+	setStorage2(stor0, stor2);
 	lastChanged = Date.now();
 	timeout = 0;
+}
+
+// firefox and similar browsers set all the keys in the object, not just the ones that are different from the existing storage
+// so we need to filter out the changes
+const setStorage2 = (stor, stor5) => {
+	let stor3 = {};
+	for(let i = 0; i < stor.length; i++) {
+		if(stor[i][1] != stor5[stor[i][0]]) {
+			stor3[stor[i][0]] = stor5[stor[i][0]];
+		}
+	}
+	browser.storage.sync.set(stor3).catch(() => {console.log("hi");document.querySelector("#quotawarning").style.display = "block"});
 }
 
 (async () => {
 	return await browser.storage.sync.get();
 })().then(storage => {
 	let getItem = (key) => {return storage[key]};
-	let stor1 = storage;
+	let stor1 = storage, stor6 = Object.entries(storage);
 	stor2 = stor1;
 	if(getItem("blurAmount") == undefined) {
 		stor1.blurAmount = 0;
@@ -105,8 +119,14 @@ const setStorage = () => {
 	if(getItem("starry") == undefined) {
 		stor1.starry = 0;
 	}
+	if(getItem("starry") == undefined) {
+		stor1.starry = 0;
+	}
+	/*if(getItem("card") == undefined) {
+		stor1.card = "#E7F3F9";
+	}*/
 	if(storage != stor1) {
-		browser.storage.sync.set(stor1);
+		setStorage2(stor6, stor1);
 	}
 	document.forms["toolbox"]["blurAmount"].value = getItem("blurAmount");
 	document.forms["toolbox"]["bodyBackground"].value = getItem("bodyBackground");
@@ -119,6 +139,7 @@ const setStorage = () => {
 	document.forms["toolbox"]["autoAttendanceRainbow"].checked = (getItem("autoAttendanceRainbow") != "0" && getItem("autoAttendanceRainbow"));
 	document.forms["toolbox"]["originalLayout"].checked = (getItem("originalLayout") != 0 && getItem("originalLayout"));
 	document.forms["toolbox"]["starry"].checked = (getItem("starry") != "0" && getItem("starry"));
+	//document.forms["toolbox"]["card"].value = getItem("card");
 	//document.querySelector("form").addEventListener("submit", () => {
 	document.querySelector("form").addEventListener("input", () => {
 		 /* MAX_WRITE_OPERATIONS_PER_MINUTE is 120, or twice a second.

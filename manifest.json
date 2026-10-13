@@ -25,5 +25,9 @@
 		"default_popup": "popup.html",
 		"default_icon": "128.png"
 	},
-	"update_url": "https://clients2.google.com/service/update2/crx"
+	"browser_specific_settings": {
+		"gecko": {
+			"id": "{88e25e4f-ff2f-48e1-86b2-5a4a88943f78}"
+		}
+	}
 }

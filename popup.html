@@ -119,6 +119,9 @@
 				cursor: pointer;
 				accent-color: paleturquoise;
 			}
+			input[type="color"] {
+				border: 2px solid #444444;
+			}
 			.square {
 				width: 30px;
 				height: 30px;
@@ -184,6 +187,9 @@
 			#bbheader {
 				font-size: 100px;
 			}
+			.v80 h4 {
+				color: #b0ffe0;
+			}
 		</style>
 	</head>
 	<body>
@@ -198,6 +204,7 @@
 							<tr><td>Opacity: <input name='translucent' type='range' min='0' max='1' step='0.001'></input></td></tr>
 							<tr><td>Blur amount (WARNING: VERY SLOW): <input name='blur' type='range' min='0' max='50' step='0.1' name='blur'></input><!--</td><td>-->
 								<input id='blurAmount' name='blurAmount' readonly='true' style='background-color:light-gray;'></input></td></tr>
+							<!--<tr><td>Card colour: <input name='card' type='color'></input></td></tr>-->
 							<tr><td>Auto indicator rainbow:<input name='autoAttendanceRainbow' type='checkbox'></input></td></tr>
 							<tr title="If you change this setting, the page will reload to display the change."><td>Revert to original layout:<input name='originalLayout' type='checkbox'/></td></tr>
 							<tr><td>Starry background:<input name='starry' type='checkbox'/></td></tr>
@@ -221,8 +228,6 @@
 				<div id="guide" style="display: none;" class="stuff">
 					<h3 style="background-image: linear-gradient(135deg, lightcoral, mediumpurple);" id="guide">The Handbook</h3>
 					<div>
-						<h4>About the choppy sliders...</h4>
-							<p>Browsers don't let extensions update their storage more than 120 times in a minute. Making the changes from sliders show up live makes lots and lots of changes. I've limited saving settings to 4 times a second to avoid breaking things, which is why changing the sliders looks choppy.</p>
 						<h4>Opacity</h4>
 							<p>This slider allows you to control the opacity of the foreground of Daymap. Note that this does not change the opacity of the text.</p>
 						<h4>Blur</h4>
@@ -249,8 +254,12 @@
 				<div style="display: none;" class="stuff">
 					<h3 style="background-image: linear-gradient(135deg, lightskyblue, lightgreen)">Changelog</h3>
 					<div>
-						<h4>8.0.0</h4>
-							<p>Revamped <code>popup.html</code>, made stars a feature (previously it was only an easter egg), tidied and optimised the code, moved most long strings to a new <code>resources.json</code>, changed <code>popup.html</code> to avoid exceeding the <code>MAX_WRITE_OPERATIONS_PER_MINUTE</code> quota (trying to avoid using workers), and changed the content script to display these changes live. A bit of a change in direction, may add more animations later.</p>
+						<div class="v80">
+							<h4>8.0.0</h4>
+								<p>Revamped <code>popup.html</code>, made stars a feature (previously it was only an easter egg), tidied and optimised the code, moved most long strings to a new <code>resources.json</code>, changed <code>popup.html</code> to avoid exceeding the <code>MAX_WRITE_OPERATIONS_PER_MINUTE</code> quota (trying to avoid using workers), and changed the content script to display these changes live. A bit of a change in direction, may add more animations later.</p>
+							<h4>8.0.1</h4>
+								<p>Fixed the rainbow still keeping the same colour even when turned off and only showing one colour, added custom profile picture to the header in the original layout, modified the setting updating code to prepare for release on Firefox-based browsers, original layout now changes the page live, added transitions to card elements to smooth out changes in sliders.</p>
+						</div>
 					</div>
 				</div>
 				<p><button class="btn0 show" id="showsongbook" style="display:none;"><b><span>Show songbook</span></b></button></p>
@@ -266,6 +275,16 @@
 				<p><button class="btn1 show" style="display:none;"><b><span>Show bug book</span></b></button></p>
 				<div style="display: none;" class="stuff" id="bugbook">
 					<h1 id="bbheader">BUG BOOK</h1>
+				</div>
+				<p><button class="btn0 show"><b><span>Show credits</span></b></button></p>
+				<div style="display: none;" class="stuff">
+					<h3 style="background-image: linear-gradient(135deg, palegreen, aquamarine)">Credits and thanks</h3>
+					<div>
+						<p>To Kelvin, for troubleshooting many issues when transferring to the new Daymap, whom without I could not have solved any of the problems.</p>
+						<p>To Nugget, for <!--coming up with the idea of the bug book and--> helping with the release of some of the versions.</p>
+						<p>To Confuzzled, Thermoximus, and Morning, for helping test versions I would not otherwise been able to debug after I no longer had access to Daymap.</p>
+						<p>And to everyone who helped promote this extension, thank you very much for all of your support!</p>
+					</div>
 				</div>
 			</div>
 		</div>
