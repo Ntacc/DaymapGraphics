@@ -16,6 +16,8 @@
 				scrollbar-width: thin;
 				padding-left: 20px;
 				padding-top: 3px;
+				font-family: sans-serif;
+				user-select: none;
 			}
 			/*#showGuide {
 				/*background-image: radial-gradient(farthest-corner at 120% -25%, aquamarine, lightseagreen);*/
@@ -190,6 +192,31 @@
 			.v80 h4 {
 				color: #b0ffe0;
 			}
+			.v81 h4 {
+				color: lightsalmon;
+			}
+			.removeCol {
+				width: 10px;
+			}
+			#animationCol {
+				width: 200px;
+			}
+			#colourgenCol {
+				width: 150px;
+			}
+			/*#animations tr:nth-child(odd) {
+				background-color: rgba(50, 40, 60, 0.3);
+			}*/
+			.remove, #addAnimation {
+				cursor: pointer;
+				user-select: none;
+			}
+			td {
+				user-select: none;
+			}
+			select {
+				width: 100%;
+			}
 		</style>
 	</head>
 	<body>
@@ -205,9 +232,9 @@
 							<tr><td>Blur amount (WARNING: VERY SLOW): <input name='blur' type='range' min='0' max='50' step='0.1' name='blur'></input><!--</td><td>-->
 								<input id='blurAmount' name='blurAmount' readonly='true' style='background-color:light-gray;'></input></td></tr>
 							<!--<tr><td>Card colour: <input name='card' type='color'></input></td></tr>-->
-							<tr><td>Auto indicator rainbow:<input name='autoAttendanceRainbow' type='checkbox'></input></td></tr>
+							<!--<tr><td>Auto indicator rainbow:<input name='autoAttendanceRainbow' type='checkbox'></input></td></tr>-->
 							<tr title="If you change this setting, the page will reload to display the change."><td>Revert to original layout:<input name='originalLayout' type='checkbox'/></td></tr>
-							<tr><td>Starry background:<input name='starry' type='checkbox'/></td></tr>
+							<!--<tr><td>Starry background:<input name='starry' type='checkbox'/></td></tr>-->
 							<!-- DEPRECATED: use Daymap's in-built dark mode instead -->
 							<!-- This is done because Daymap's cookies cannot be read from the popup page, and storing dark mode in synced storage would be unreliable. -->
 							<!--Dark mode:<input name='darkMode' type='checkbox'/><br/>-->
@@ -216,8 +243,23 @@
 								<input id='rainbowSpeedAmount' name='rainbowSpeedAmount' readonly='true' style='background-color:light-gray;'></input></td></tr>
 							<tr><td>Profile picture URL:<input type='text' name='url'/></td></tr>
 							<tr><td></td></tr>
-							<!--<tr><td><input type="submit" id="submit" value="Save changes" class="a1"></input></td></tr>-->
 						</tbody>
+					</table>
+					<table id="animationPane">
+						<thead>
+							<tr>
+								<th id="removeCol"></th>
+								<th id="animationCol">Effect</th>
+								<th id="colourgenCol">Colour generator</th>
+							</tr>
+						</thead>
+						<tbody id="animations">
+						</tbody>
+					</table>
+					<table id="addAnimation">
+						<tr>
+							<td class="removeCol">+</td><td>Add effect</td>
+						</tr>
 					</table>
 				</form>
 				<div id="quotawarning" style="display: none;">Note: you have exceeded the MAX_WRITE_OPERATIONS_PER_MINUTE quota! you won't be able to change anything for the rest of the minute.</div>
@@ -226,18 +268,14 @@
 			<div style="padding-bottom: 30px; padding-right: 40px;">
 				<p><button class="btn0 show"><b><span>Show guide</span></b></button></p>
 				<div id="guide" style="display: none;" class="stuff">
-					<h3 style="background-image: linear-gradient(135deg, lightcoral, mediumpurple);" id="guide">The Handbook</h3>
+					<h3 style="background-image: linear-gradient(135deg, lightcoral, mediumpurple);" id="guide">General settings</h3>
 					<div>
 						<h4>Opacity</h4>
 							<p>This slider allows you to control the opacity of the foreground of Daymap. Note that this does not change the opacity of the text.</p>
 						<h4>Blur</h4>
 							<p>This changes how much the foreground "cards" blur the background when they are translucent or transparent. This is measured in pixels. ALSO. IT MAKES DAYMAP REALLY LAGGY. I DON'T RECOMMEND YOU ENABLE IT. EVEN THOUGH IT LOOKS REALLY COOL.</p>
-						<h4>Auto indicator rainbow</h4>
-							<p>One of the first features of Daymap Graphics was being able to click on an indicator to change its colour. An easter egg was typing in "RAINBOW" as the colour would make it continuously change colour. Now, you can automate that process by checking this box.</p>
 						<h4>Original layout</h4>
 							<p>Revert the layout of Daymap pages to the layout from before the 30th of May 2022. (Personally, I recommend enabling this, as it fixes some of the main complaints with the new layout).</p>
-						<h4>Starry background</h4>
-							<p>Adds stars to the background. That's pretty much it. It's probably best to pair this with a darker background, but it's your Daymap, so the sky's the limit. Or the stars.</p>
 						<!--<h4>Dark mode</h4>
 							In the old layout of Daymap, there was no way to turn on dark mode. This allows turning on dark mode without needing the new layout. Turning on and off dark mode normally also is sometimes broken. This also makes the text lighter, which can be useful if using a darker background.
 						-->
@@ -247,6 +285,23 @@
 							<p>Pretty self explanatory. If indicator rainbow is on, this just changes how fast the rainbow changes colour and moves around.</p>
 						<h4>Profile picture URL</h4>
 							<p>In feed view, there's a profile picture thingy that doesn't seem to get used. So if you want to change it, paste in a link to an image.</p>
+						<h3 style="background-image: linear-gradient(135deg, palegreen, goldenrod)">The effects menu</h3>
+						<h4>Starry background</h4>
+							<p>Adds stars to the background. That's pretty much it. It's probably best to pair this with a darker background, but it's your Daymap, so the sky's the limit. Or the stars.</p>
+						<h4>Rainbow indicators</h4>
+							<p>One of the first features of Daymap Graphics was being able to click on an indicator to change its colour. An easter egg was typing in "RAINBOW" as the colour would make it continuously change colour. Now, you can automate it.</p>
+						<h4>Rainbow background</h4>
+							<p>An animated rainbow background. Probably one of my favourite features so far!</p>
+						<h4>Bubbles</h4>
+							<p>Slowly rising bubbles. Be warned, during testing this really increased CPU and memory usage, so it might really drain your battery.</p>
+						<h4>Colour generators</h4>
+							<p>Each colour generator produces different styles:
+							<ul>
+								<li>Classic (based on a program from @WeatherWonders on Khan Academy) produces more saturated colours.</li>
+								<li>Pastels (by me!) generates sets of pastel colours based around themes (so you'll rarely see clashy colours).</li>
+								<li>Uniform colours just means there's no pattern to how it's generated.</li>
+							<ul>
+							</p>
 					</div>
 					<p>I hope this guide helped!</p>
 				</div>
@@ -259,6 +314,10 @@
 								<p>Revamped <code>popup.html</code>, made stars a feature (previously it was only an easter egg), tidied and optimised the code, moved most long strings to a new <code>resources.json</code>, changed <code>popup.html</code> to avoid exceeding the <code>MAX_WRITE_OPERATIONS_PER_MINUTE</code> quota (trying to avoid using workers), and changed the content script to display these changes live. A bit of a change in direction, may add more animations later.</p>
 							<h4>8.0.1</h4>
 								<p>Fixed the rainbow still keeping the same colour even when turned off and only showing one colour, added custom profile picture to the header in the original layout, modified the setting updating code to prepare for release on Firefox-based browsers, original layout now changes the page live, added transitions to card elements to smooth out changes in sliders.</p>
+						</div>
+						<div class = "v81">
+							<h4>8.1.0</h4>
+								<p>Used messages to sync changes live more smoothly than detecting storage changes and added a background script for message passing. Added an effects menu, alongside the background rainbow and bubbles effects. Fixed an oversight where the custom profile picture was not added to the menu in the new layout. Added a super awesome pastel colour generator.</p>
 						</div>
 					</div>
 				</div>

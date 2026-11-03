@@ -1,6 +1,6 @@
 /*
 
-	DaymapGraphics.js 
+	DaymapGraphics.js
 	Copyright (C) 2026  apate98
 
 	This program is free software: you can redistribute it and/or modify
@@ -47,25 +47,42 @@
  * 7.6.0 *   Moved settings to extension popup, removed top menu code due to the upcoming Daymap update that removes the top menu, fixed bug that led to the slow blur backdrop filter being applied even when unnecessary.
  * 8.0.0 *   Reworked the code, made stars a feature, performance improvements, and most changes can show up live.
  * 8.0.1 *   Fixed two bugs with the rainbow and a bug with the profile picture, preparations for release on Firefox-based browsers, original layout now changes the page live, added transitions to card elements to smooth out changes in sliders.
-*/
+ * 8.1.0 *   Used messages to sync changes live more smoothly than detecting storage changes, added effects menu, alongside the bubbles and background rainbow effects, added background script (Firefox)/service worker (Chromium) for message passing and setting storage when the popup menu is closed.
+
 
 /*
- * TODO:
- * Presets
- * Fix calendar opacity (?? haven't tested... no clue if it's still broken)
- * More animations
- * * Shimmery thingy
- * * Snowflakes
- * * Fireflies?
- * Change the way the profile picture URL is added to the header
-*/
+ * TODO
+ * PRI: 0 is maximum priority, 4 is minimum priority
+ * CAT:
+ * * 0 is a feature to be added or GUI change
+ * * 1 is a bug
+ * * 2 is safety (limiting unwanted behaviour in uncommon cases)
+ * * 3 is anything else
+ * 0 is minimum difficulty, 7 is maximum difficulty
+ * PRI  CAT  TASK
+ * 4    0    Presets
+ * 2    1    Fix calendar opacity (?? haven't tested... no clue if it's still broken)
+ * -    0    More animations
+ * 3    -    * Shimmery thingy
+ * 3    -    * Snowflakes
+ * 4    -    * Fireflies?
+ * 0    2    Change the way the profile picture URL is added to the header (in case of quotes)
+ * 1    0    Detailed guide for CSS
+ * 0    0    Display effects menu as a tree to allow space for different options
+ * 0    2    Robust object comparator for setStorage2
+ * 1    2    Get dark mode cookie by name
+ * 2    1    Dark mode header is not translucent
+ * 2    1    Dark mode original layout buttons are white on hover
+ * 4    1    Original layout breaks when changed rapidly
+
 
 /*
  * COMPATIBILITY
  * Compatible (tested):
- * * Chromium (Blink/V8)
+ * * Chromium 148+ (Blink/V8)
  * * Google Chrome (Blink/V8)
  * * MSEdge (Blink/V8)
+ * * Firefox (Gecko/Quantum/Servo/SpiderMonkey)
  * Prepare for release on:
  * * Firefox (Gecko/Quantum/Servo/SpiderMonkey)
  * * MSEdge (Blink/V8)
@@ -73,22 +90,20 @@
  * Test compatibility with:
  * * Brave (Blink/V8)
  * * Opera (Blink/V8)
-*/
+
 
 /*
- * STUFF THAT WON'T BE IMPLEMENTED:
- * Modules
+ * STUFF THAT WON'T BE IMPLEMENTED
  * WebKit compatibility
+
+
+/*
+ * CHECKLIST BEFORE PUSHING UPDATE
+ * Change changelog
+ * Change version and changes variables
+ * Change manifest.json version
+ * Check popup.html
 */
-
-
-
-// CHECKLIST BEFORE PUSHING UPDATE
-// Change changelog
-// Change version and changes variables
-// Change manifest.json version
-// Check popup.html
-
 
 
 
@@ -100,19 +115,16 @@
 
 'use strict';
 
-const version = "8.0";
-const changes = "Daymap Graphics 8.0: Backgrounds can now be starry! More animations coming soon...";
-
-// Set item in storage
-const setItem = (key, value) => {
-	browser.storage.sync.set({[key]: value});
-};
+const version = "8.1";
+const changes = "Daymap Graphics 8.1: Effects menu and pastel theme!";
 
 const constrain = (num, min, max) => {
 	return num < min ? min : num > max ? max : num;
 }
 
-var lessonStart, lessonEnd, date, classEls = [], i, anything = [], r50d = [], dark, translucentness, starInterval, stork, blr, attendanceRainbows = [], test, url, resources, formattingStuff = [], changed = 0;
+var lessonStart, lessonEnd, date, classEls = [], i, anything = [], r50d = [], dark, translucentness, starInterval, stork = {}, blr, attendanceRainbows = [], test, url, resources, formattingStuff = [], changed = 0, animations = new Map(), background, tickSpeed = 20, tickn = 0, storage = browser.storage.sync;
+
+//var port = browser.runtime.connect({name: "contentScript"});
 
 // Because dark mode is the only cookie that Daymap Graphics can read, others are HTTP only
 dark = (document.cookie.substr(document.cookie.length - 1, document.cookie.length) == "1" ? 1 : 0);
@@ -130,42 +142,99 @@ const timeOfDiaryEl = (lessonEl) => {
 
 // transformed uniform random distribution
 // does the same as using minimum and maximum bounds
-const rTrans = (y, x = 0) => {
-	return Math.random() * y + x;
+const rTrans = (y, x = 0, p = 1) => {
+	return Math.pow(Math.random(), p) * y + x;
+}
+
+
+// Ntacc's super awesome colour generator
+const calc = (bias2, c, m = 255, y = 150) => {
+	let bias4 = (bias2[0] + bias2[1] + bias2[2] - 3) / 4 + 1;
+	return rTrans(y / bias2[c] / bias4, m - y / bias2[c] / bias4, bias2[c] + 1);
+}
+
+const ntcolourgen = (bias2, m = 255, y = 150) => {
+	let bias3 = Math.min(bias2[0], bias2[1], bias2[2]) - 1;
+	bias3 = (bias3 > 0.3 ? bias3 : 0);
+	bias2 = [bias2[0] - bias3, bias2[1] - bias3, bias2[2] - bias3];
+	let c;
+	do {
+		c = [Math.round(calc(bias2, 0, m, y)), Math.round(calc(bias2, 1, m, y)), Math.round(calc(bias2, 2, m, y))];
+	} while (c.reduce((a, b) => {return Math.max(a, b)}) - c.reduce((a, b) => {return Math.min(a, b)}) < 20);
+	return c;
 }
 
 // each colour in the rainbow is stored as a point on a 2D colour space (point in a square in a euclidean space), not all colours are represented
-// this is to make it look nicer by choice of the colour space
+// this is to make it look nicer by choice of the colour space, that I found in a program by @WeatherWonders on Khan Academy
 // "move" and "changeDirection" just change where the point is in that colour space (as if moving through a euclidean space)
-function rainbow(el, speed, on) {
-	this.el = el, this.speed = speed, this.data = [], this.on = on;
-	for(let i = 0; i < 3; i++) {
-		this.data[i] = [rTrans(400), rTrans(400), rTrans(0.5, 0.25), rTrans(0.5, 0.25)]; // Colour, colour, direction, direction
+class Rainbow {
+	constructor(el, speed, on, n, colourgen, m, y) {
+		this.el = el, this.speed = speed, this.data = [], this.on = on, this.colours = [], this.targets = [], this.bias2 = [rTrans(4, 3, 1), rTrans(3, 3, 1), rTrans(1, 3, 1)], this.timer = Date.now(), this.n = n, this.rotate = true, this.colourgen = colourgen, this.m = m, this.y = y;
+		for(let i = 0; i < this.n; i++) {
+			this.data[i] = [rTrans(400), rTrans(400), rTrans(0.5, 0.25), rTrans(0.5, 0.25)]; // Colour, colour, direction, direction
+			this.colours.push(ntcolourgen(this.bias2, this.m, this.y));
+			this.targets.push(ntcolourgen(this.bias2, this.m, this.y));
+		}
 	}
-	this.move = (num) => {
-		this.data[num][0] += rTrans(1, -this.data[num][2]) * this.speed;
-		this.data[num][1] += rTrans(1, -this.data[num][3]) * this.speed;
-		this.data[num][0] = constrain(this.data[num][0], 0, 410);
-		this.data[num][1] = constrain(this.data[num][1], 0, 410);
-	};
-	this.update = () => { // In case you were confused about those huge lines in the previous versions, this is sort of what they look like individually
-		if(this.on) {
-			let grad = "linear-gradient(" + this.data[0][0] + "deg";
-			for(let i = 0; i < 3; i++) {
-				this.move(i);
-				grad += `,rgb(${(this.data[i][0])},${((400-this.data[i][0]+this.data[i][1])/2.5)},${(400-this.data[i][1])})${((i-1)*75)}%`;
-			}
-			this.el.style.backgroundImage = grad + ")";
+	colour(i) {
+		switch(this.colourgen.type) {
+			case "weather":
+				return `${(this.data[i][0])},${((400-this.data[i][0]+this.data[i][1])/2.5)},${(400-this.data[i][1])}`;
+			case "custom":
+				return `${this.colours[i][0]},${this.colours[i][1]},${this.colours[i][2]}`;
 		}
 	};
-	this.toggle = () => {
-		this.on ^= 1;
-		this.el.style.backgroundImage = "";
+	move(num) {
+		switch(this.colourgen.type) {
+			case "weather":
+				this.data[num][0] += rTrans(1, -this.data[num][2]) * this.speed;
+				this.data[num][1] += rTrans(1, -this.data[num][3]) * this.speed;
+				this.data[num][0] = constrain(this.data[num][0], 0, 400);
+				this.data[num][1] = constrain(this.data[num][1], 0, 400);
+				break;
+			case "custom":
+				for(let i = 0; i < this.n; i++) {
+					for(let j = 0; j < 3; j++) {
+						this.colours[i][j] += (this.targets[i][j] - this.colours[i][j]) * this.speed / 5000;
+					}
+				}
+				break;
+		}
+	};
+	update() { // In case you were confused about those huge lines in the previous versions, this is sort of what they look like individually
+		if(this.on) {
+			let grad = "linear-gradient(" + this.data[0][0] + "deg";
+			for(let i = 0; i < this.n; i++) {
+				this.move(i);
+				grad += `,rgb(${this.colour(i)})${((i-1)*75)}%`;
+			}
+			this.el.style.backgroundImage = grad + ")";
+			if(Date.now() > this.timer + 5000 * tickSpeed / this.speed) {
+				this.changeDirection();
+				this.timer = Date.now();
+			}
+		}
+	};
+	toggle(on = -1) {
+		this.on = (on < 0 ? this.on ^ 1 : on);
+		if(!this.on) {
+			this.el.style.backgroundImage = "";
+		}
 	}
-	this.changeDirection = () => {
-		for(let i = 0; i < 3; i++) {
-			this.data[i][2] = rTrans(0.5, 0.25);
-			this.data[i][3] = rTrans(0.5, 0.25);
+	changeDirection() {
+		switch(this.colourgen.type) {
+			case "weather":
+				for(let i = 0; i < this.n; i++) {
+					this.data[i][2] = rTrans(0.5, 0.25);
+					this.data[i][3] = rTrans(0.5, 0.25);
+				}
+				break;
+			case "custom":
+				this.bias2 = [rTrans(4, 3, 1), rTrans(3, 3, 1), rTrans(1, 3, 1)];
+				for(let i = 0; i < this.n; i++) {
+					this.targets[i] = ntcolourgen(this.bias2, this.m, this.y);
+				}
+				break;
 		}
 	}
 };
@@ -180,11 +249,65 @@ const starInit = () => {
 	}, 30);
 };
 
-const setBackground = (bg) => {
-	if(bg === "surprise me") {
+class Bubble {
+	constructor() {
+		this.r = Math.random() * 50 + 50;
+		this.x = Math.random() * (document.body.scrollWidth + this.r * 2) - this.r;
+		this.y = document.body.scrollHeight + this.r;
+		this.vx = (Math.random() - 0.5) / 10;
+		this.vy = (Math.random() + 1) / 10;
+		this.c = [rTrans(255), rTrans(255), rTrans(255), rTrans(1/20, 0.02)];
+		this.el = document.createElement("div");
+		this.el.style.borderRadius = "50%";
+		this.el.style.position = "absolute";
+		this.el = document.querySelector("#bubbles").appendChild(this.el);
+		this.id = Bubble.counter;
+		Bubble.list.set(Bubble.counter, this);
+		Bubble.counter++;
+	}
+	update() {
+		this.x += this.vx * Bubble.tickrate;
+		this.y -= this.vy * Bubble.tickrate;
+		this.c[3] *= Math.pow(0.9999, Bubble.tickrate);
+		this.r *= Math.pow(1.0001, Bubble.tickrate);
+		this.el.style.background = "rgba(" + this.c[0] + "," + this.c[1] + "," + this.c[2] + "," + this.c[3] + ")";
+		this.el.style.left = this.x + "px";
+		this.el.style.top = this.y + "px";
+		this.el.style.width = this.r + "px";
+		this.el.style.height = this.r + "px";
+		if(this.x <= 0 - this.r) {
+			Bubble.list.delete(this.id);
+		}
+	}
+	static list = new Map();
+	static counter = 0;
+	static on = 0;
+	static tickrate = 2;
+	static updateAll() {
+		Bubble.list.forEach(bubble => bubble.update());
+		if(Bubble.list.size < 100 && Math.random() <= 0.01 * Bubble.tickrate) {
+			new Bubble();
+		}
+	}
+	static toggle(on) {
+		Bubble.on = on;
+		if(on) {
+			document.querySelector("#bubbles").style.visibility = "visible";
+		} else {
+			document.querySelector("#bubbles").style.visibility = "hidden";
+		}
+	}
+}
+
+const setBackground = (bg, exists) => {
+	let bg2 = (exists ? background : bg);
+	if(!exists) {
+		background = bg;
+	}
+	if(bg2 == "surprise me") {
 		document.querySelector("#bodyUnderlay").style.background = resources.backgrounds[Math.floor(rTrans(3))];
 	} else {
-		document.querySelector("#bodyUnderlay").style.background = bg;
+		document.querySelector("#bodyUnderlay").style.background = bg2;
 	}
 }
 
@@ -193,6 +316,8 @@ const setBackground = (bg) => {
 // this is what the background thing modifies
 let bodyUnderlay = document.createElement("div");
 bodyUnderlay.setAttribute("id", "bodyUnderlay");
+bodyUnderlay.appendChild(document.createElement("div"));
+bodyUnderlay.querySelector("div").setAttribute("id", "bubbles");
 document.querySelector("head").innerHTML += "<style>#bodyUnderlay {position: fixed; width: 100%; height: 100%; top: 0; z-index: -2147483647;}</style>";
 document.querySelector("body").appendChild(bodyUnderlay);
 
@@ -205,39 +330,31 @@ for(i = 0; i < 500; i++) {
 	anything[4] = rTrans(1, 1);
 	anything[5] = rTrans(90, -45);
 	document.querySelector("#bodyUnderlay").innerHTML += "<div class='r50d' style='width:" + anything[0] + "px;height:" + anything[0] + "px;top:" + anything[2] + "vh;left:" + anything[3] + "vw;position:absolute;border-radius:" + constrain(Math.random() * 50, 0, 50) + "%;background-color:rgba(" + constrain(anything[1] * anything[4], 0, 255) + ", " + constrain((anything[1] > 127.5 ? (127.5 - anything[1]) : anything[1]) * anything[4], 0, 255) + ", " + constrain((255 - anything[1]) * anything[4], 0, 255) + ", " + Math.random() / 1.5 +");transform:rotate("+ anything[5] + "deg);opacity:0;'></div>";
-	r50d.push("1," + Math.random() / 100 + "," + anything[5] + "," + (Math.random() - 0.5) * 15);
+	r50d.push("1," + Math.random() / 100 + "," + anything[5] + "," + (Math.random() - 0.5) * 5);
+}
+
+const iterate = (selector, cb, scope = document) => {
+	for(let i = 0; i < scope.querySelectorAll(selector).length; i++) {
+		cb(scope.querySelectorAll(selector)[i]);
+	}
 }
 
 const handleTranslucentness = () => { // Yes I know it's written translucency
-	for(i = 0; i < document.querySelectorAll(".card, .msg, .ditm, .Toolbar, #cntDiary, .tabPage").length; i++) {
-		document.querySelectorAll(".card, .msg, .ditm, .Toolbar, #cntDiary, .tabPage")[i].style.background = thingy0();
-	}
-	for(i = 0; i < document.querySelectorAll(".item-container, .tabList div a, .rgGroupPanel td td").length; i++) {
-		document.querySelectorAll(".item-container, .tabList div a, .rgGroupPanel td td")[i].style.background = "rgba(255, 255, 255, 0)";
-	}
-	for(i = 0; i < document.querySelectorAll(".hasDatepicker, #divInbox, .Left").length; i++) {
-		document.querySelectorAll(".hasDatepicker, #divInbox, .Left")[i].style.backgroundColor = thingy0(37, 233, 0.7);
-	}
-	for(i = 0; i < document.querySelectorAll(".ditm, .Toolbar").length; i++) {
-		document.querySelectorAll(".ditm, .Toolbar")[i].style.outline = "3px solid rgba(250, 250, 250, " + translucentness * 0.45 + ")";
-	}
+	iterate(".card, .msg, .ditm, .Toolbar, #cntDiary, .tabPage", a => {a.style.background = thingy0()});
+	iterate(".item-container, .tabList div a, .rgGroupPanel td td", a => {a.style.background = "rgba(255, 255, 255, 0)"});
+	iterate(".hasDatepicker, #divInbox, .Left", a => {a.style.backgroundColor = thingy0(37, 233, 0.7)});
+	iterate(".ditm, .Toolbar", a => {a.style.outline = "3px solid rgba(250, 250, 250, " + translucentness * 0.45 + ")"});
 	if(document.querySelector("#bCalendar")) {
 		document.querySelector("#bCalendar").style.backgroundColor = "rgba(31, 157, 217, " + translucentness * 1.6 + ")";
 		document.querySelector("#btnDiary").style.backgroundColor = "rgba(31, 157, 217, " + translucentness * 1.6 + ")";
 	}
 	if(blr && blr != 0) {
-		for(i = 0; i < document.querySelectorAll(".card, .Toolbar").length; i++) {
-			document.querySelectorAll(".card, .Toolbar")[i].style.backdropFilter = "blur(" + blr + "px)";
-		}
+		iterate(".card, .Toolbar", a => {a.style.backdropFilter = "blur(" + blr + "px)"});
 	}
-	for(i = 0; i < document.querySelectorAll(".nav-container, .nav-user-container, .rgGroupPanel td").length; i++) {
-		document.querySelectorAll(".nav-container, .nav-user-container, .rgGroupPanel td")[i].style.backgroundColor = thingy0(37, 233, 0.7);
-	}
+	iterate(".nav-container, .nav-user-container, .rgGroupPanel td", a => {a.style.backgroundColor = thingy0(37, 233, 0.7)});
 	if(document.querySelector("#headerThingy")) {
 		let header = document.querySelector("#headerThingy");
-		for(i = 0; i < header.querySelectorAll("td").length; i++) {
-			header.querySelectorAll("td")[i].style.backgroundColor = thingy0(37, 233, 1.2);
-		}
+		iterate("td", a => {a.style.backgroundColor = thingy0(37, 233, 1.2)}, header);
 		header.querySelector(".header").style.backgroundColor = thingy0(37, 233, 1.3);
 		header.querySelector(".header").style.backdropFilter = "blur(" + blr + "px)";
 	}
@@ -246,12 +363,8 @@ const handleTranslucentness = () => { // Yes I know it's written translucency
 		try {
 			document.querySelector("daymap-header").style.backgroundColor = "rgba(255, 255, 255, " + translucentness * 1.2 + ")";
 			document.querySelector("daymap-header").style.backdropFilter = "blur(" + blr * 3 + "px)";
-			for(i = 0; document.querySelectorAll("daymap-header div ul li").length; i++) {
-				document.querySelectorAll("daymap-header div ul li")[i].style.backgroundColor = "rgba(255, 255, 255, " + translucentness * 0.8 + ")";
-			}
-			for(i = 0; i < document.querySelectorAll(".diaryEvents, #divDiaryDay, .PlanDay").length; i++) {
-				document.querySelectorAll(".diaryEvents, #divDiaryDay, .PlanDay")[i].style.background = thingy0();
-			}
+			iterate("daymap-header div ul li", a => {a.style.backgroundColor = "rgba(255, 255, 255, " + translucentness * 0.8 + ")"});
+			iterate(".diaryEvents, #divDiaryDay, .PlanDay", a => {a.style.background = thingy0()});
 		} catch {
 			return;
 		}
@@ -265,9 +378,9 @@ const thingy0 = (a = 37, b = 233, c = 1) => { // Random motif that appears a bun
 }
 
 async function addBug(id) {
-	let bugs = (await browser.storage.sync.get()).bugs;
+	let bugs = (await storage.get()).bugs;
 	if(!(bugs >> id & 1)) {
-		setItem("bugs", (bugs | (1 << id)));
+		storage.set({"bugs": (bugs | (1 << id))});
 	}
 }
 
@@ -279,16 +392,16 @@ const originalLayout = () => {
 			link.innerHTML = resources.postTicker[0] + document.querySelector("#bulletin_ .atooltip").attributes.href.value + `">` + document.querySelector("#bulletin_ .atooltip").innerText + resources.postTicker[1];
 			document.querySelector(".main-layout").appendChild(link);
 			window.clearInterval(megaphone);
-			if(document.querySelector("header")) {
-				document.querySelector("header").classList.add("stuffToAddBack");
-				document.querySelector("header").style.display = "none";
-			}
+			iterate("header", a => {
+				a.classList.add("stuffToAddBack");
+				a.style.display = "none";
+			});
 		} else if (!document.querySelector(".header-announcements[style='display:block']")) {
 			window.clearInterval(megaphone);
-			if(document.querySelector("header")) {
-				document.querySelector("header").classList.add("stuffToAddBack");
-				document.querySelector("header").style.display = "none";
-			}
+			iterate("header", a => {
+				a.classList.add("stuffToAddBack");
+				a.style.display = "none";
+			});
 		}
 	}, 100);
 	// Adds the header from the old Daymap after the other one's been removed
@@ -298,26 +411,24 @@ const originalLayout = () => {
 				let header = document.createElement("div");
 				header.setAttribute("id", "headerThingy");
 				header.innerHTML = resources.header[0] + (!document.querySelector("daymap-nav-item[menu-id='1151'] .menu-item-container .menu-item .menu-message-count.hidden") ? `<div class="notification-amount" title="New messages"> ${(document.querySelector("daymap-nav-item[menu-id='1151'] .menu-item-container .menu-item .menu-message-count") ? document.querySelector("daymap-nav-item[menu-id='1151'] .menu-item-container .menu-item .menu-message-count").innerHTML : ``)}</div>` : ``) + (url ? resources.header[1].replaceAll("/DayMap/Images/profile-icon-grey.png", url) : resources.header[1]) + (document.querySelector(".name-text") ? document.querySelector(".name-text").innerHTML : "") + resources.header[2];
-				if(document.querySelector("daymap-nav")) {
-					document.querySelector("daymap-nav").classList.add("stuffToAddBack");
-					document.querySelector("daymap-nav").style.display = "none";
-				}
-				if(document.querySelector("daymap-menu")) {
-					document.querySelector("daymap-menu").classList.add("stuffToAddBack");
-					document.querySelector("daymap-menu").style.display = "none";
-				}
+				iterate("daymap-nav", a => {
+					a.classList.add("stuffToAddBack");
+					a.style.display = "none";
+				});
+				iterate("daymap-menu", a => {
+					a.classList.add("stuffToAddBack");
+					a.style.display = "none";
+				});
 				formattingStuff = [document.querySelector(".main-layout").style.marginLeft, document.querySelector(".main-layout").style.marginTop, [], []];
 				document.querySelector(".main-layout").style.marginLeft = "0px";
 				document.querySelector(".main-layout").style.marginTop = "38.2px";
-				for(i = 0; i < document.querySelectorAll(".card").length; i++) {
-					formattingStuff[2].push(document.querySelectorAll(".card")[i].style.border);
-					formattingStuff[3].push(document.querySelectorAll(".card")[i].style.borderRadius);
-					document.querySelectorAll(".card")[i].style.border = "1px solid " + (dark ? "gray" : "gainsboro");
-					document.querySelectorAll(".card")[i].style.borderRadius = "4px";
-				}
-				for(i = 0; i < header.querySelectorAll("td").length; i++) {
-					header.querySelectorAll("td")[i].style.backgroundColor = thingy0(37, 233, 1.2);
-				}
+				iterate(".card", a => {
+					formattingStuff[2].push(a.style.border);
+					formattingStuff[3].push(a.style.borderRadius);
+					a.style.border = "1px solid " + (dark ? "gray" : "gainsboro");
+					a.style.borderRadius = "4px";
+				});
+				iterate("td", a => {a.style.backgroundColor = thingy0(37, 233, 1.2)}, header);
 				if(url) {
 					header.querySelector("#divUserAvatar").style.background = `url(${url}) center / cover no-repeat`;
 				}
@@ -347,69 +458,93 @@ const originalLayout = () => {
 	}, 1000);*/
 }
 
+function tick() {
+	for(let i = 0; i < attendanceRainbows.length; i++) {
+		attendanceRainbows[i].update();
+	}
+	if(Bubble.on && tickn % Bubble.tickrate == 0) {
+		Bubble.updateAll();
+	}
+	tickn++;
+}
+
 // Probably bad practice but this was the only way I could find to get the storage and use it without .then every time or making the entire code asynchronous (which would break the code).
 (async () => {
-	return [await browser.storage.sync.get(), JSON.parse((await (await window.fetch(browser.runtime.getURL("resources.json"))).text()).replaceAll(/\n/g,""))];
+	return [await storage.get(), JSON.parse((await (await window.fetch(browser.runtime.getURL("resources.json"))).text()).replaceAll(/\n/g,""))];
 })()
 	.then(inputs => {
-		const getItem = (key) => {return inputs[0][key]};
-		Object.assign(inputs[0], stork);
+		let stor2 = inputs[0];
+		Object.assign(stork, inputs[0]);
 		resources = inputs[1];
-		blr = getItem("blurAmount");
-		url = getItem("url");
+		blr = stor2.blurAmount;
+		url = stor2.url;
+		if(!stor2.animations) {
+			stor2.animations = [];
+		}
+		if(stor2.autoAttendanceRainbow) {
+			stor2.animations.push({type: "indicator", colourgen: {type: "weather"}});
+			storage.remove("autoAttendanceRainbow");
+		} else if (stor2.autoAttendanceRainbow !== undefined) {
+			storage.remove("autoAttendanceRainbow");
+		}
+		if(stor2.starry) {
+			stor2.animations.push({type: "starry", colourgen: {type: "uniform"}});
+			storage.remove("starry");
+		} else if (stor2.starry !== undefined) {
+			storage.remove("starry");
+		}
+		for(let i = 0; i < stor2.animations.length; i++) {
+			animations.set(stor2.animations[i].type, stor2.animations[i]);
+		}
+		storage.set({animations: stor2.animations});
 
 		// guide for first-time users and version info when there's an update
-		if(getItem("version") != version || !getItem("version")) {
+		if(stor2.version != version || !stor2.version) {
 			document.querySelector("head").appendChild((() => {let something = document.createElement("style"); something.innerHTML = resources.guideCSS; return something;})());
 			document.querySelector(".main-layout").appendChild((() => {
-				let something = document.createElement("div"); something.innerHTML = resources.guidePart + (getItem("version") ? changes : resources.instructions) + "</span>";
+				let something = document.createElement("div"); something.innerHTML = resources.guidePart + (stor2.version ? changes : resources.instructions) + "</span>";
 				something.setAttribute("id", "guide");
 				something.querySelector("#closeGuide").addEventListener("click", () => {document.querySelector("#guide").style.display="none";});
 				return something;
 			})());
-			setItem("version", version);
+			storage.set({"version": version});
 		}
-		
-		if(getItem("bodyBackground") != "" && getItem("bodyBackground") != undefined) {
-			setBackground(getItem("bodyBackground"));
+
+		if(stor2.bodyBackground != "" && stor2.bodyBackground != undefined) {
+			setBackground(stor2.bodyBackground, 0);
 		}
 
 		// Stars!!
-		if(getItem("starry") == 1) {
+		if(animations.get("starry")) {
 			starInit();
 			for(i = 0; i < document.querySelectorAll(".r50d").length; i++) {
 				document.querySelectorAll(".r50d")[i].style.opacity = 1;
 			}
 		}
-		
+
+		if(animations.get("bubbles")) {
+			Bubble.on = 1;
+		}
+
 		// Be honest, you probably did actually submit it on Turnitin.
 		// As far as I remember, this is the oldest feature of the entire extension, along with changing the colour of the attendance indicator.
-		for(i = 0; i < document.querySelectorAll(".itm .Error").length; i++) {
-			document.querySelectorAll(".itm .Error")[i].innerText = "Uh did you submit on Turnitin or something?";
-		}
+		iterate(".itm .error", a => {a.innerText = "Uh did you submit on Turnitin or something?"});
 
 		// RAINBOW
 		var attendanceEls = document.querySelectorAll(".sdIndicator");
-		/*for(i = 0; i < attendanceEls.length; i++) {
-			attendanceEls[i].classList.add("attendance");
-		}*/
 		for(i = 0; i < attendanceEls.length; i++) {
-			attendanceRainbows.push(new rainbow(attendanceEls[i], getItem("rainbowSpeed"), getItem("autoAttendanceRainbow") != 0 && getItem("autoAttendanceRainbow") ? 1 : 0));
+			attendanceRainbows.push(new Rainbow(attendanceEls[i], stor2.rainbowSpeed, animations.get("indicator") != 0 && animations.get("indicator") ? 1 : 0, 3, (animations.get("indicator") ? animations.get("indicator").colourgen : {type: "custom"}), 220, 70));
 		}
-		setInterval(() => {for(let i = 0; i < attendanceRainbows.length; i++) {attendanceRainbows[i].update();}}, 20);
-		setInterval(() => {for(let i = 0; i < attendanceRainbows.length; i++) {attendanceRainbows[i].changeDirection();}}, 5000);
+		attendanceRainbows.push(new Rainbow(document.querySelector("#bodyUnderlay"), stor2.rainbowSpeed, (animations.get("background") ? 1 : 0), 3, (animations.get("background") ? animations.get("background").colourgen : {type: "custom"}), 255, 150));
+
 		// Getting the element that describes the current time
-		if(document.querySelector(".diaryWeek")) {
-			document.querySelector(".diaryWeek").addEventListener("click", () => {
-				alert("rgb(" + attendanceRainbow[0] + "," + (400 - attendanceRainbow[0] + attendanceRainbow[1]) / 2.5 + "," + (400 - attendanceRainbow[1]) + ")");
-			});
-		}
 		if(document.querySelector(".diaryDay")) {
 			const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 			let date = Date().substr(11, 4) + "-" + (months.indexOf(Date().substr(4, 3)) < 10 ? "0" : "") + (months.indexOf(Date().substr(4, 3)) + 1) + "-" + Date().substr(8, 2);
 			let time = Number(Date().substr(16, 2) + Date().substr(19, 2));
 			if(document.querySelector(".diaryDay[data-date='"+date+"']")) {
 				let lessonEls = [];
+					// to do: check if there's a way to rewrite this as siblings
 					for(i = 0; i < document.querySelector(".diaryDay[data-date='"+date+"']").parentNode.childNodes.length; i++) {
 						lessonEls.push(document.querySelector(".diaryDay[data-date='"+date+"']").parentNode.childNodes[i]);
 					}
@@ -427,14 +562,13 @@ const originalLayout = () => {
 			}
 			// LangLit is evil (as is TOK)
 			var evilEl;
-			for(var i = 0; i < document.querySelectorAll(".L").length; i++) {
+			iterate(".L", a => {
 				let evils = ["ELZ", "ENG", "LLS", "LLH", "TTK"];
-				let something = document.querySelectorAll(".L")[i];
-				if(evils.indexOf(something.childNodes[1].childNodes[0].innerText.substr(0, 3)) != -1) {
-					something.classList.add("evil");
-					something.title = "Warning: this subject is evil. Clicking on its name will enable evil mode.";
+				if(evils.indexOf(a.childNodes[1].childNodes[0].innerText.substr(0, 3)) != -1) {
+					a.classList.add("evil");
+					a.title = "Warning: this subject is evil. Clicking on its name will enable evil mode.";
 				}
-			}
+			});
 			if(lessonEl != undefined) {
 				lessonEl.style.transformOrigin = "50% 50%";
 				lessonEl.style.borderRadius = "5px";
@@ -463,83 +597,44 @@ const originalLayout = () => {
 							document.querySelector("head").innerHTML += "<style>.bodyOverlay {background-color:rgba(113,13,13,0.5);width:100vw; height: 100vh; position:fixed;}</style>";
 						}
 						document.querySelector(".Toolbar").style.background = "rgb(100, 20, 20)";
-						for (i = 0; i < document.querySelectorAll(".grid div").length; i++) {
-							document.querySelectorAll(".grid div")[i].style.background = "rgb(100, 20, 40)";
-						};
-						for (i = 0; i < document.querySelectorAll(".list-item-heading").length; i++) {
-							document.querySelectorAll(".list-item-heading")[i].innerText = "Mua ha ha ha!";
-						};
-						for (i = 0; i < document.querySelectorAll(".list-item-meta").length; i++) {
-							document.querySelectorAll(".list-item-meta")[i].innerText = "Always.";
-						};
-						for (i = 0; i < document.querySelectorAll(".description").length; i++) {
-							document.querySelectorAll(".description")[i].innerText = "Daymap bows down to my power.";
-						};
+						iterate(".grid div", a => {a.style.background = "rgb(100, 20, 40)"});
+						iterate(".list-item-heading", a => {a.innerText = "Mua ha ha ha!"});
+						iterate(".list-item-meta", a => {a.innerText = "Always."});
+						iterate(".description", a => {a.innerText = "Daymap bows down to my power."});
 					}
 				});
 			}
 		}
-		
+
 		// Translucency effect
-		if(getItem("translucentMode") && parseFloat(getItem("translucentMode")) < 1) {
-			translucentness = parseFloat(getItem("translucentMode"));
+		if(stor2.translucentMode && parseFloat(stor2.translucentMode) < 1) {
+			translucentness = parseFloat(stor2.translucentMode);
 			handleTranslucentness();
 		}
 		window.setInterval(() => { // 0-1ms per iteration, 7-8ms if condition is met
 			// Reverting the messages to how they looked previously.
 			if(document.querySelector(".fa-mail-bulk") ? document.querySelector(".fa-mail-bulk").outerHTML.indexOf("img") == -1 : 0) {
-				let length = document.querySelectorAll(".fa-mail-bulk").length;
-				for(i = 0; i < length; i++) {
-					document.querySelector(".fa-mail-bulk").outerHTML = "<img src='https://qasmt.eq.daymap.net/Daymap/images/coms/post32.png'/>";
-				}
-				length = document.querySelectorAll(".img-container .fa-comment-alt").length;
-				for(i = 0; i < length; i++) {
-					document.querySelector(".img-container .fa-comment-alt").outerHTML = "<img src='https://qasmt.eq.daymap.net/Daymap/images/coms/newmsg.png'/>";
-				}
-				length = document.querySelectorAll(".fa-comment-alt-dots").length;
-				for(i = 0; i < length; i++) {
-					document.querySelector(".fa-comment-alt-dots").outerHTML = "<img src='https://qasmt.eq.daymap.net/Daymap/images/coms/newmsg.png'/>";
-				}
-				length = document.querySelectorAll(".fa-paperclip").length;
-				for(i = 0; i < length; i++) {
-					document.querySelector(".fa-paperclip").outerHTML = "<img src='https://qasmt.eq.daymap.net/Daymap/images/buttons/attachment.gif'/>";
-				}
-				for(i = 0; i < document.querySelectorAll(".msg").length; i++) {
-					document.querySelectorAll(".msg")[i].style.border = "3px solid rgba(220, 220, 220, " + translucentness * 0.45 + ")";
-				}
-				for(i = 0; i < document.querySelectorAll(".msg").length; i++) {
-					document.querySelectorAll(".msg")[i].style.background = thingy0();
-				}
+				iterate(".fa-mail-bulk", a => {a.outerHTML = "<img src='https://qasmt.eq.daymap.net/Daymap/images/coms/post32.png'/>"});
+				iterate(".img-container .fa-comment-alt", a => {a.outerHTML = "<img src='https://qasmt.eq.daymap.net/Daymap/images/coms/newmsg.png'/>"});
+				iterate(".fa-comment-alt-dots", a => {a.outerHTML = "<img src='https://qasmt.eq.daymap.net/Daymap/images/coms/newmsg.png'/>"});
+				iterate(".fa-paperclip", a => {a.outerHTML = "<img src='https://qasmt.eq.daymap.net/Daymap/images/buttons/attachment.gif'/>"});
+				iterate(".msg", a => {a.style.border = "3px solid rgba(220, 220, 220, " + translucentness * 0.45 + ")"; a.style.background = thingy0();});
 				if(blr && blr != 0) {
-					for(i = 0; i < document.querySelectorAll(".msg").length; i++) {
-						document.querySelectorAll(".msg")[i].style.backdropFilter = "blur(" + blr + "px)";
-					}
+					iterate(".msg", a => {a.style.backdropFilter = "blur(" + blr + "px)"});
 				}
-				for(i = 0; i < document.querySelectorAll(".item-container").length; i++) {
-					document.querySelectorAll(".item-container")[i].style.background = "rgba(255, 255, 255, 0)";
-				}
+				iterate(".item-container", a => {a.style.background = "rgba(255, 255, 255, 0)"});
 			}
 			// Portfolio page
-			for(i = 0; i < document.querySelectorAll(".body-114").length; i++) {
-				document.querySelectorAll(".body-114")[i].style.background = "rgba(255, 255, 255, 0)";
-			}
-			if(document.querySelector(".msgBody")) {
-				document.querySelector(".msgBody").style.background = thingy0();
-			}
-			if(document.querySelectorAll(".data-table, #tblAttendanceRate, #tblClasses, .rgMasterTable")) {
-				for(i = 0; i < document.querySelectorAll(".data-table tbody tr th, #tblAttendanceRate tbody tr th, #tblClasses tbody tr th, .rgMasterTable thead tr th").length; i++) {
-					document.querySelectorAll(".data-table tbody tr th, #tblAttendanceRate tbody tr th, #tblClasses tbody tr th, .rgMasterTable thead tr th")[i].style.backgroundColor = "rgba(0, 108, 190, " + (1 - (1 - translucentness) / 2) + ")";
-				}
-				for(i = 0; i < document.querySelectorAll(".data-table tbody tr:nth-child(even) td, #tblAttendanceRate tbody tr:nth-child(even) td, #tblClasses tbody tr:nth-child(even) td, .rgMasterTable tbody tr:nth-child(even) td").length; i++) {
-					document.querySelectorAll(".data-table tbody tr:nth-child(even) td, #tblAttendanceRate tbody tr:nth-child(even) td, #tblClasses tbody tr:nth-child(even) td, .rgMasterTable tbody tr:nth-child(even) td")[i].style.backgroundColor = thingy0(21, 241, 1.5);
-				}
-				for(i = 0; i < document.querySelectorAll(".data-table tbody tr:nth-child(odd) td, #tblAttendanceRate tbody tr:nth-child(odd) td, #tblClasses tbody tr:nth-child(odd) td, .rgMasterTable tbody tr:nth-child(odd) td").length; i++) {
-					document.querySelectorAll(".data-table tbody tr:nth-child(odd) td, #tblAttendanceRate tbody tr:nth-child(odd) td, #tblClasses tbody tr:nth-child(odd) td, .rgMasterTable tbody tr:nth-child(odd) td")[i].style.backgroundColor = thingy0(37, 233, 1.5);
-				}
+			iterate(".body-114", a => {a.style.background = "rgba(255, 255, 255, 0)"});
+			iterate(".msgBody", a => {a.style.background = thingy0()});
+			if(document.querySelector(".data-table, #tblAttendanceRate, #tblClasses, .rgMasterTable")) {
+				iterate(".data-table tbody tr th, #tblAttendanceRate tbody tr th, #tblClasses tbody tr th, .rgMasterTable thead tr th", a => {a.style.backgroundColor = "rgba(0, 108, 190, " + (1 - (1 - translucentness) / 2) + ")"});
+				iterate(".data-table tbody tr:nth-child(even) td, #tblAttendanceRate tbody tr:nth-child(even) td, #tblClasses tbody tr:nth-child(even) td, .rgMasterTable tbody tr:nth-child(even) td", a => {a.style.backgroundColor = thingy0(21, 241, 1.5)});
+				iterate(".data-table tbody tr:nth-child(odd) td, #tblAttendanceRate tbody tr:nth-child(odd) td, #tblClasses tbody tr:nth-child(odd) td, .rgMasterTable tbody tr:nth-child(odd) td", a => {a.style.backgroundColor = thingy0(37, 233, 1.5)});
 			}
 		}, 100);
 		// Reverts Daymap to the (better) original layout.
-		if(getItem("originalLayout") && getItem("originalLayout") != 0) {
+		if(stor2.originalLayout && stor2.originalLayout != 0) {
 			originalLayout();
 		}
 		// For timetable view
@@ -552,103 +647,69 @@ const originalLayout = () => {
 					document.querySelectorAll("#tblTt tbody tr:nth-child(odd) td")[i].style.backgroundColor = thingy0();
 				}
 			}
-			for(i = 0; i < document.querySelectorAll(".ttCell").length; i++) {
-				document.querySelectorAll(".ttCell")[i].style.boxShadow = "0.5px 0.75px 1px rgba(0, 0, 0, 0.25)"
-			}
+			iterate(".ttCell", a => {a.style.boxShadow = "0.5px 0.75px 1px rgba(0, 0, 0, 0.25)"});
 		}
 		// Profile picture thingy
-		if(getItem("url") && document.querySelector(".photoThumb")) {
-			document.querySelector(".photoThumb").style.background = `url(${getItem("url")}) 0 0 / contain no-repeat`;
+		if(stor2.url && document.querySelector(".photoThumb")) {
+			document.querySelector(".photoThumb").style.background = `url(${stor2.url}) 0 0 / contain no-repeat`;
 			document.querySelector(".photoThumb").style.width = "100px";
 			document.querySelector(".photoThumb").style.height = "120px";
 		}
+		iterate(".nav-user-image", a => {a.style.backgroundImage = `url(${url}) center / cover no-repeat`});
 	});
 
+setInterval(tick, tickSpeed);
 
-
-browser.storage.onChanged.addListener((changes, areaName) => {
-	if(areaName != "sync") {
-		// Maybe something else in a future version?
-		return;
-	}
+function onChanged(changes) {
 	if(!changed) {
 		document.querySelector("head").appendChild((() => {let something = document.createElement("style"); something.innerHTML = resources.generalCSS2; return something;})());
 		changed = 1;
 	}
 	for(let i = 0; i < Object.keys(changes).length; i++) {
-		let z0 = Object.entries(changes)[i][1].newValue;
+		let z0 = Object.entries(changes)[i][1];
 		//Object.assign(stork[Object.entries(changes)[i][0]], z0);
 		switch(Object.entries(changes)[i][0]) {
-			case "autoAttendanceRainbow":
-				//completed
-				for(let i = 0; i < attendanceRainbows.length; i++) {
-					attendanceRainbows[i].toggle();
-				}
-				break;
 			case "blurAmount":
 				//completed
-				for(i = 0; i < document.querySelectorAll(".msg").length; i++) {
-					document.querySelectorAll(".msg")[i].style.backdropFilter = `blur(${z0}px)`;
-				}
-				for(i = 0; i < document.querySelectorAll(".card, .Toolbar").length; i++) {
-					document.querySelectorAll(".card, .Toolbar")[i].style.backdropFilter = `blur(${z0}px)`;
-				}
-				if(document.querySelector("#headerThingy")) {
-					document.querySelector("#headerThingy").querySelector(".header").style.backdropFilter = `blur(${z0}px)`;
-				}
+				iterate(".msg", a => {a.style.backdropFilter = `blur(${z0}px)`});
+				iterate(".card, .Toolbar", a => {a.style.backdropFilter = `blur(${z0}px)`});
+				iterate("#headerThingy .header", a => {a.style.backdropFilter = `blur(${z0}px)`});
 				blr = z0;
 				handleTranslucentness();
 				break;
 			case "bodyBackground":
 				//completed
-				setBackground(z0);
+				setBackground(z0, 0);
 				break;
 			case "originalLayout":
-				//completed...? TODO: test
-				//location.reload(); // temp fix, people will probably not like this
+				//completed i guess
 				if(!z0) {
 					document.querySelector("#headerThingy").style.display = "none";
 					document.querySelector(".main-layout").style.marginLeft = formattingStuff[0];
 					document.querySelector(".main-layout").style.marginTop = formattingStuff[1];
-					for(i = 0; i < document.querySelectorAll(".card").length; i++) {
+					for(let j = 0; j < document.querySelectorAll(".card").length; j++) {
 						document.querySelectorAll(".card")[i].style.border = formattingStuff[2][i];
 						document.querySelectorAll(".card")[i].style.borderRadius = formattingStuff[3][i];
 					}
-					for(let i = 0; i < document.querySelectorAll(".stuffToAddBack").length; i++) {
-						document.querySelectorAll(".stuffToAddBack")[i].style.display = "block";
-					}
+					iterate(".stuffToAddBack", a => {a.style.display = "block"});
 				} else if(z0) {
 					if(!document.querySelector("#headerThingy")) {
 						originalLayout();
 					} else {
 						document.querySelector(".main-layout").style.marginLeft = "0px";
 						document.querySelector(".main-layout").style.marginTop = "38.2px";
-						for(i = 0; i < document.querySelectorAll(".card").length; i++) {
-							document.querySelectorAll(".card")[i].style.border = "1px solid " + (dark ? "gray" : "gainsboro");
-							document.querySelectorAll(".card")[i].style.borderRadius = "4px";
-						}
+						iterate(".card", a => {
+							a.style.border = "1px solid " + (dark ? "gray" : "gainsboro");
+							a.style.borderRadius = "4px";
+						});
 						document.querySelector("#headerThingy").style.display = "block";
 					}
 				}
 				break;
 			case "rainbowSpeed":
 				//completed
-				for(let i = 0; i < attendanceRainbows.length; i++) {
-					attendanceRainbows[i].speed = Number(z0);
-				}
-				break;
-			case "starry":
-				//completed
-				if(!z0 && starInterval) {
-					window.clearInterval(starInterval); // saves resources
-					for(i = 0; i < document.querySelectorAll(".r50d").length; i++) {
-						document.querySelectorAll(".r50d")[i].style.opacity = 0;
-					}
-				} else if(z0) {
-					starInit();
-					for(i = 0; i < document.querySelectorAll(".r50d").length; i++) {
-						document.querySelectorAll(".r50d")[i].style.opacity = 1;
-					}
+				for(let j = 0; j < attendanceRainbows.length; j++) {
+					attendanceRainbows[j].speed = Number(z0);
 				}
 				break;
 			case "translucentMode":
@@ -667,7 +728,57 @@ browser.storage.onChanged.addListener((changes, areaName) => {
 					document.querySelector(".photoThumb").style.width = "100px";
 					document.querySelector(".photoThumb").style.height = "120px";
 				}
+					iterate(".nav-user-image", a => {a.style.background = `url(${url}) center / cover no-repeat`});
+				break;
+			case "animations":
+				animations = new Map();
+				for(let j = 0; j < z0.length; j++) {
+					animations.set(z0[j].type, z0[j]);
+				}
+				if(animations.get("indicator")) {
+					for(let j = 0; j < attendanceRainbows.length - 1; j++) {
+						attendanceRainbows[j].colourgen = animations.get("indicator").colourgen;
+						attendanceRainbows[j].toggle(1);
+					}
+				} else {
+					for(let j = 0; j < attendanceRainbows.length - 1; j++) {
+						attendanceRainbows[j].toggle(0);
+					}
+				}
+				if(animations.get("background")) {
+					attendanceRainbows[attendanceRainbows.length - 1].colourgen = animations.get("background").colourgen;
+					attendanceRainbows[attendanceRainbows.length - 1].toggle(1);
+				} else {
+					attendanceRainbows[attendanceRainbows.length - 1].toggle(0);
+					setBackground(1, 1);
+				}
+				if(!animations.get("starry") && starInterval) {
+					window.clearInterval(starInterval); // saves resources
+					for(let j = 0; j < document.querySelectorAll(".r50d").length; j++) {
+						document.querySelectorAll(".r50d")[j].style.opacity = 0;
+					}
+				} else if(animations.get("starry")) {
+					starInit();
+					for(let j = 0; j < document.querySelectorAll(".r50d").length; j++) {
+						document.querySelectorAll(".r50d")[j].style.opacity = 1;
+					}
+				}
+				if(animations.get("bubbles")) {
+					Bubble.toggle(1);
+				} else {
+					Bubble.toggle(0);
+				}
 				break;
 		}
 	}
-})
+};
+
+browser.runtime.sendMessage({origin: "contentScript"});
+
+browser.runtime.onMessage.addListener((message) => {
+	if(message.origin == "background") {
+		if(message.message.changes) {
+			onChanged(message.message.changes);
+		}
+	}
+});

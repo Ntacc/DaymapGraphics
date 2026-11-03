@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Daymap Graphics",
-    "version": "8.0.1",
+    "version": "8.1.0",
     "description": "Daymap is currently plain and boring. With Daymap Graphics, customise colour, transparency, blurred background, and more!",
     "permissions": [
 		"storage"
@@ -18,6 +18,9 @@
 			"matches": ["*://*.daymap.net/*", "*://*.sa.edu.au/*"]
 		}
 	],
+	"externally_connectable": {
+		"matches": ["*://*.daymap.net/*", "*://*.sa.edu.au/*"]
+	},
     "icons": {
 		"128": "128.png"
     },
@@ -29,5 +32,9 @@
 		"gecko": {
 			"id": "{88e25e4f-ff2f-48e1-86b2-5a4a88943f78}"
 		}
+	},
+	"background": {
+		"service_worker": "background.js",
+		"scripts": ["background.js"]
 	}
 }
