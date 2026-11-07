@@ -1,227 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<style>
-			#main {
-				width: 670px;
-				height: 400px;
-				font-family: "Helvetica";
-				color: white;
-				font-size: 10pt;
-				padding-bottom: 30px;
-			}
-			body {
-				background: #1e1e1e;
-				scrollbar-color: cornflowerblue #222233;
-				scrollbar-width: thin;
-				padding-left: 20px;
-				padding-top: 3px;
-				font-family: sans-serif;
-				user-select: none;
-			}
-			/*#showGuide {
-				/*background-image: radial-gradient(farthest-corner at 120% -25%, aquamarine, lightseagreen);*/
-				/*border: 1px outset mediumturquoise;
-				border: none;
-				padding: 5px;
-				mask-image: radial-gradient(rgba(0, 0, 0, 1) 20%, rgba(0, 0, 0, 0) 80%);
-				font-family: "Brush Script MT", cursive;
-				border: none;
-				/*border-radius: 5px;
-				background-color: transparent;
-				/*border: 0.8px dotted lightgoldenrodyellow;
-				font-size: 1em;
-				color: white;
-				padding-left: 0px;
-				margin-left: 5px;
-				transition: padding-left 0.2s;
-			}*/
-			.btn0 {
-				border: none;
-				/*border-radius: 5px;*/
-				background-color: transparent;
-				/*border: 0.8px dotted lightgoldenrodyellow;*/
-				font-size: 1em;
-				color: #eeeeee;
-				padding-left: 0px;
-				margin-left: 5px;
-				transition: padding-left 0.2s;
-				cursor: pointer;
-			}
-			.btn0:hover {
-				padding-left: 10px;
-				transition: padding-left 0.2s;
-				border-left: 3px solid #444444;
-			}
-			#bodyBackground {
-				display:inline-block;
-				width:100%;
-			}
-			#submit {
-				/*font-family: monospace;*/
-				margin: 2px;
-				padding: 3px 10px 3px 10px;
-				color: black;
-				border: 2px solid #444444;
-				border-radius: 15px;
-				transition: margin 0.2s ease-in;
-				cursor: pointer;
-				background-image: linear-gradient(135deg, palegreen, lightsteelblue);
-			}
-			#submit:hover {
-				margin: 0.5px 3.5px 3.5px 0.5px;
-				box-shadow: #555555 2px 1.5px 3px;
-				transition: margin 0.2s ease-in, box-shadow 0.2s;
-			}
-			tr {
-				height: 20px;
-			}
-			h2 {
-				font-family: monospace;
-			}
-			.a, h3, #bbheader {
-				background-clip: text;
-				color: transparent;
-			}
-			.a0 {
-				background-image: linear-gradient(135deg, cornflowerblue, darkorchid);
-			}
-			input[name="translucent"] {
-				accent-color: mediumslateblue;
-			}
-			input[name="blur"] {
-				accent-color: steelblue;
-			}
-			input[name="rainbowSpeed"] {
-				accent-color: royalblue;
-			}
-			input[type="text"] {
-				background-color: linen;
-				width: 100%;
-			}
-			input[type="range"] {
-				cursor: grab;
-			}
-			input[type="range"]:active {
-				cursor: grabbing;
-			}
-			input[readonly="true"] {
-				background-color: whitesmoke;
-				font-family: monospace;
-				width: 100px;
-				cursor: default;
-			}
-			input[type="text"], input[readonly="true"] {
-				border-radius: 5px;
-			}
-			input[type="text"] {
-				border-radius: 5px;
-			}
-			input[type="checkbox"] {
-				cursor: pointer;
-				accent-color: paleturquoise;
-			}
-			input[type="color"] {
-				border: 2px solid #444444;
-			}
-			.square {
-				width: 30px;
-				height: 30px;
-				margin: 5px;
-				display: inline-block;
-				transition: transform 1s, opacity 1s;
-				animation: disappear1 1s;
-			}
-			#squares {
-				position: fixed;
-				bottom: 0px;
-				right: -20px;
-				z-index: -100;
-				visibility: visible;
-				transition: transform 1s, opacity 1s;
-				animation: disappear0 1s;
-				width: 100vw;
-			}
-			.disappear {
-				transform: rotate(90deg) scale(10);
-				opacity: 0;
-				transition: all 1s;
-			}
-			.disappear .square {
-				transform: rotate(360deg);
-				margin: 50px;
-				transition: all 2s;
-			}
-			@keyframes disappear0 {
-				0% {
-					transform: rotate(90deg) scale(10);
-					opacity: 0;
-				}
-				100% {
-					transform: none;
-					opacity: 1;
-				}
-			}
-			@keyframes disappear1 {
-				0% {
-					transform: rotate(360deg);
-				}
-				100% {
-					transform: none;
-					margin: 5px;
-				}
-			}
-			.stuff {
-				margin-left: 5px;
-				padding-bottom: 10px;
-			}
-			.stuff div {
-				margin-left: 0px;
-			}
-			.stuff div p {
-				margin: 0px;
-				padding: 0px;
-				margin-left: 5px;
-			}
-			.stuff h4 {
-				margin-bottom: 5px;
-			}
-			#bbheader {
-				font-size: 100px;
-			}
-			.v80 h4 {
-				color: #b0ffe0;
-			}
-			.v81 h4 {
-				color: lightsalmon;
-			}
-			.removeCol {
-				width: 10px;
-			}
-			#animationCol {
-				width: 200px;
-			}
-			#colourgenCol {
-				width: 150px;
-			}
-			/*#animations tr:nth-child(odd) {
-				background-color: rgba(50, 40, 60, 0.3);
-			}*/
-			.remove, #addAnimation {
-				cursor: pointer;
-				user-select: none;
-			}
-			td {
-				user-select: none;
-			}
-			select {
-				width: 100%;
-			}
-		</style>
+		<link rel="stylesheet" href="popup.css"/>
 	</head>
 	<body>
 		<div id="main">
-			<h2 class="a a0">Welcome to Daymap Graphics!</h2>
+			<h2><span class="a a0">Welcome to Daymap Graphics!</span></h2>
 			<div id="toolbox">
 				<form name="toolbox">
 					<table>
@@ -271,36 +55,36 @@
 					<h3 style="background-image: linear-gradient(135deg, lightcoral, mediumpurple);" id="guide">General settings</h3>
 					<div>
 						<h4>Opacity</h4>
-							<p>This slider allows you to control the opacity of the foreground of Daymap. Note that this does not change the opacity of the text.</p>
+							<p>The opacity of the cards.</p>
 						<h4>Blur</h4>
-							<p>This changes how much the foreground "cards" blur the background when they are translucent or transparent. This is measured in pixels. ALSO. IT MAKES DAYMAP REALLY LAGGY. I DON'T RECOMMEND YOU ENABLE IT. EVEN THOUGH IT LOOKS REALLY COOL.</p>
+							<p>How much the cards blur the background when they are translucent or transparent. ALSO. IT MAKES DAYMAP REALLY LAGGY. I DON'T RECOMMEND YOU ENABLE IT. EVEN THOUGH IT LOOKS REALLY COOL.</p>
 						<h4>Original layout</h4>
-							<p>Revert the layout of Daymap pages to the layout from before the 30th of May 2022. (Personally, I recommend enabling this, as it fixes some of the main complaints with the new layout).</p>
+							<p>Revert the layout of Daymap pages to the layout from before the 30th of May 2022.</p>
 						<!--<h4>Dark mode</h4>
 							In the old layout of Daymap, there was no way to turn on dark mode. This allows turning on dark mode without needing the new layout. Turning on and off dark mode normally also is sometimes broken. This also makes the text lighter, which can be useful if using a darker background.
 						-->
 						<h4>Background CSS property</h4>
 							<p>Out of all the features, this is the hardest to use. This should take the form of a CSS background property. You can use colours, linear gradients, and more. I personally like <code>linear-gradient(to bottom right, #ABCDEF, turquoise, plum)</code>. However, you can also use images, including animated ones. The format for this should resemble <code>url('https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg')</code>. You may also wish to resize and reposition an image, so use the format <code>url('https://cdn.esawebb.org/archives/images/screen/carinanebula3.jpg') 0 0 / cover</code>.</p>
 						<h4>Rainbow speed</h4>
-							<p>Pretty self explanatory. If indicator rainbow is on, this just changes how fast the rainbow changes colour and moves around.</p>
+							<p>How fast the rainbows change colour and moves around (see below: effects menu).</p>
 						<h4>Profile picture URL</h4>
 							<p>In feed view, there's a profile picture thingy that doesn't seem to get used. So if you want to change it, paste in a link to an image.</p>
 						<h3 style="background-image: linear-gradient(135deg, palegreen, goldenrod)">The effects menu</h3>
 						<h4>Starry background</h4>
-							<p>Adds stars to the background. That's pretty much it. It's probably best to pair this with a darker background, but it's your Daymap, so the sky's the limit. Or the stars.</p>
+							<p>Adds stars to the background.</p>
 						<h4>Rainbow indicators</h4>
 							<p>One of the first features of Daymap Graphics was being able to click on an indicator to change its colour. An easter egg was typing in "RAINBOW" as the colour would make it continuously change colour. Now, you can automate it.</p>
 						<h4>Rainbow background</h4>
 							<p>An animated rainbow background. Probably one of my favourite features so far!</p>
 						<h4>Bubbles</h4>
-							<p>Slowly rising bubbles. Be warned, during testing this really increased CPU and memory usage, so it might really drain your battery.</p>
+							<p>Slowly rising bubbles.</p>
 						<h4>Colour generators</h4>
 							<p>Each colour generator produces different styles:
-							<ul>
-								<li>Classic (based on a program from @WeatherWonders on Khan Academy) produces more saturated colours.</li>
-								<li>Pastels (by me!) generates sets of pastel colours based around themes (so you'll rarely see clashy colours).</li>
-								<li>Uniform colours just means there's no pattern to how it's generated.</li>
-							<ul>
+								<ul>
+									<li>Classic (based on a program from @WeatherWonders on Khan Academy) produces more saturated colours.</li>
+									<li>Pastels (by me!) generates sets of pastel colours based around themes (so you'll rarely see clashy colours).</li>
+									<li>Uniform colours just means there's no pattern to how it's generated.</li>
+								<ul>
 							</p>
 					</div>
 					<p>I hope this guide helped!</p>
@@ -309,15 +93,17 @@
 				<div style="display: none;" class="stuff">
 					<h3 style="background-image: linear-gradient(135deg, lightskyblue, lightgreen)">Changelog</h3>
 					<div>
-						<div class="v80">
-							<h4>8.0.0</h4>
-								<p>Revamped <code>popup.html</code>, made stars a feature (previously it was only an easter egg), tidied and optimised the code, moved most long strings to a new <code>resources.json</code>, changed <code>popup.html</code> to avoid exceeding the <code>MAX_WRITE_OPERATIONS_PER_MINUTE</code> quota (trying to avoid using workers), and changed the content script to display these changes live. A bit of a change in direction, may add more animations later.</p>
-							<h4>8.0.1</h4>
-								<p>Fixed the rainbow still keeping the same colour even when turned off and only showing one colour, added custom profile picture to the header in the original layout, modified the setting updating code to prepare for release on Firefox-based browsers, original layout now changes the page live, added transitions to card elements to smooth out changes in sliders.</p>
-						</div>
-						<div class = "v81">
+						<div class = "v8-1">
+							<h4>8.1.1</h4>
+								<p>Improved bubble performance by using 3D transformations and opacity in <code>@keyframes</code> instead of constantly modifying <code>top</code>, <code>width</code>, <code>height</code>, and <code>background</code>. Fixed an issue where closing a page caused the background script to break. Effects menu now always chooses the default colour generator when switching effects. <code>transition: all</code> on script injection instead on settings change.</p>
 							<h4>8.1.0</h4>
 								<p>Used messages to sync changes live more smoothly than detecting storage changes and added a background script for message passing. Added an effects menu, alongside the background rainbow and bubbles effects. Fixed an oversight where the custom profile picture was not added to the menu in the new layout. Added a super awesome pastel colour generator.</p>
+						</div>
+						<div class="v8-0">
+							<h4>8.0.1</h4>
+								<p>Fixed the rainbow still keeping the same colour even when turned off and only showing one colour, added custom profile picture to the header in the original layout, modified the setting updating code to prepare for release on Firefox-based browsers, original layout now changes the page live, added transitions to card elements to smooth out changes in sliders.</p>
+							<h4>8.0.0</h4>
+								<p>Revamped <code>popup.html</code>, made stars a feature (previously it was only an easter egg), tidied and optimised the code, moved most long strings to a new <code>resources.json</code>, changed <code>popup.html</code> to avoid exceeding the <code>MAX_WRITE_OPERATIONS_PER_MINUTE</code> quota (trying to avoid using workers), and changed the content script to display these changes live. A bit of a change in direction, may add more animations later.</p>
 						</div>
 					</div>
 				</div>

@@ -1,5 +1,5 @@
 {
-    "guideCSS": "
+    "generalCSS": "
         #guide {
             top: 50vh;
             left: 40vw;
@@ -25,10 +25,32 @@
             vertical-align: baseline;
             line-height: 1.4vw;
         }
-    ",
-    "generalCSS2": "
+        #bubbles {
+            height: 100%;
+        }
+        @keyframes bubbleAnimation {
+            from {
+                transform: perspective(100px) translate3d(0, 0, 0);
+                opacity: 1;
+            }
+            to {
+                transform: perspective(100px) translate3d(0px, calc(-1 * var(--scrollHeight) - 200px), 70px);
+                opacity: 0.8;
+            }
+        }
         .card, #headerThingy td {
             transition: all 0.2s ease-out 0s;
+        }
+        @keyframes appear {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        #bodyUnderlay {
+            animation: appear 0.1s;
         }
     ",
     "instructions": "Click on the extensions icon in the top right of your browser and then click on the Daymap Graphics icon for a guide!",

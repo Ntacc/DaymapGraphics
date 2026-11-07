@@ -48,6 +48,7 @@
  * 8.0.0 *   Reworked the code, made stars a feature, performance improvements, and most changes can show up live.
  * 8.0.1 *   Fixed two bugs with the rainbow and a bug with the profile picture, preparations for release on Firefox-based browsers, original layout now changes the page live, added transitions to card elements to smooth out changes in sliders.
  * 8.1.0 *   Used messages to sync changes live more smoothly than detecting storage changes, added effects menu, alongside the bubbles and background rainbow effects, added background script (Firefox)/service worker (Chromium) for message passing and setting storage when the popup menu is closed.
+ * 8.1.1 *   Improved bubble performance by using 3D transformations and opacity in @keyframes instead of constantly modifying top, width, height, and background. Fixed an issue where closing a page caused the background script to break. Effects menu now always chooses the default colour generator when switching effects. transition: all; on script injection instead on settings change.
 
 
 /*
@@ -122,7 +123,7 @@ const constrain = (num, min, max) => {
 	return num < min ? min : num > max ? max : num;
 }
 
-var lessonStart, lessonEnd, date, classEls = [], i, anything = [], r50d = [], dark, translucentness, starInterval, stork = {}, blr, attendanceRainbows = [], test, url, resources, formattingStuff = [], changed = 0, animations = new Map(), background, tickSpeed = 20, tickn = 0, storage = browser.storage.sync;
+var lessonStart, lessonEnd, date, classEls = [], i, anything = [], r50d = [], dark, translucentness, starInterval, stork = {}, blr, attendanceRainbows = [], test, url, resources, formattingStuff = [], changed = 0, animations = new Map(), background, tickSpeed = 20, tickn = 0, storage = browser.storage.sync, scrollHeight;
 
 //var port = browser.runtime.connect({name: "contentScript"});
 
@@ -246,46 +247,45 @@ const starInit = () => {
 			document.querySelectorAll(".r50d")[i].style.transform = "scale(" + r50d[i].split(",")[0] + ", " + r50d[i].split(",")[0] + ") rotate(" + r50d[i].split(",")[2] + "deg)";
 			r50d[i] = (parseFloat(r50d[i].split(",")[0]) + parseFloat(r50d[i].split(",")[1])) + "," + (parseFloat(r50d[i].split(",")[0]) >= 1.1 ? Math.abs(parseFloat(r50d[i].split(",")[1])) * -1 : parseFloat(r50d[i].split(",")[0]) <= 0.9 ? Math.abs(r50d[i].split(",")[1]) : parseFloat(r50d[i].split(",")[1])) + "," + (parseFloat(r50d[i].split(",")[2]) + parseFloat(r50d[i].split(",")[3])) + "," + parseFloat(r50d[i].split(",")[3]); i = i >= r50d.length - 1 ? 0 : i + 1;
 		}
-	}, 30);
+	}, 60);
 };
 
 class Bubble {
 	constructor() {
-		this.r = Math.random() * 50 + 50;
-		this.x = Math.random() * (document.body.scrollWidth + this.r * 2) - this.r;
-		this.y = document.body.scrollHeight + this.r;
-		this.vx = (Math.random() - 0.5) / 10;
-		this.vy = (Math.random() + 1) / 10;
+		this.r = rTrans(50, 50);
+		this.speed = rTrans(100, 50);
+		this.end = Date.now() + this.speed * 1000;
 		this.c = [rTrans(255), rTrans(255), rTrans(255), rTrans(1/20, 0.02)];
 		this.el = document.createElement("div");
 		this.el.style.borderRadius = "50%";
 		this.el.style.position = "absolute";
+		this.el.style.animation = `bubbleAnimation ${this.speed}s ease-in`;
+		this.el.style.left = rTrans(document.body.scrollWidth + this.r * 2, -this.r) + "px";
+		this.el.style.top = document.body.scrollHeight + this.r + "px";
+		this.el.style.width = this.r + "px";
+		this.el.style.height = this.r + "px";
+		this.el.style.background = "rgba(" + this.c[0] + "," + this.c[1] + "," + this.c[2] + "," + this.c[3] + ")";
 		this.el = document.querySelector("#bubbles").appendChild(this.el);
 		this.id = Bubble.counter;
 		Bubble.list.set(Bubble.counter, this);
 		Bubble.counter++;
 	}
-	update() {
-		this.x += this.vx * Bubble.tickrate;
-		this.y -= this.vy * Bubble.tickrate;
-		this.c[3] *= Math.pow(0.9999, Bubble.tickrate);
-		this.r *= Math.pow(1.0001, Bubble.tickrate);
-		this.el.style.background = "rgba(" + this.c[0] + "," + this.c[1] + "," + this.c[2] + "," + this.c[3] + ")";
-		this.el.style.left = this.x + "px";
-		this.el.style.top = this.y + "px";
-		this.el.style.width = this.r + "px";
-		this.el.style.height = this.r + "px";
-		if(this.x <= 0 - this.r) {
-			Bubble.list.delete(this.id);
-		}
+	static collectGarbage() {
+		Bubble.list.forEach(bubble => {
+			let now = Date.now();
+			if(now > bubble.end) {
+				bubble.el.remove();
+				Bubble.list.delete(bubble.id);
+			}
+		});
 	}
 	static list = new Map();
 	static counter = 0;
 	static on = 0;
 	static tickrate = 2;
 	static updateAll() {
-		Bubble.list.forEach(bubble => bubble.update());
-		if(Bubble.list.size < 100 && Math.random() <= 0.01 * Bubble.tickrate) {
+		//Bubble.list.forEach(bubble => bubble.update());
+		if(Math.random() <= 0.01 * Bubble.tickrate) {
 			new Bubble();
 		}
 	}
@@ -465,8 +465,24 @@ function tick() {
 	if(Bubble.on && tickn % Bubble.tickrate == 0) {
 		Bubble.updateAll();
 	}
+	if(Bubble.on && tickn % 1000 == 0) {
+		Bubble.collectGarbage();
+	}
+	if(document.body.scrollHeight != scrollHeight) {
+		scrollHeight = document.body.scrollHeight;
+		document.querySelector("#scrollHeight").innerHTML = `
+			:root {
+				--scrollHeight: ${scrollHeight}px;
+			};`
+	}
 	tickn++;
 }
+
+document.querySelector("head").appendChild((() => {
+	let something = document.createElement("style");
+	something.setAttribute("id", "scrollHeight");
+	return something;
+})());
 
 // Probably bad practice but this was the only way I could find to get the storage and use it without .then every time or making the entire code asynchronous (which would break the code).
 (async () => {
@@ -498,9 +514,14 @@ function tick() {
 		}
 		storage.set({animations: stor2.animations});
 
+		document.querySelector("head").appendChild((() => {
+			let something = document.createElement("style");
+			something.innerHTML = resources.generalCSS;
+			return something;
+		})());
+
 		// guide for first-time users and version info when there's an update
 		if(stor2.version != version || !stor2.version) {
-			document.querySelector("head").appendChild((() => {let something = document.createElement("style"); something.innerHTML = resources.guideCSS; return something;})());
 			document.querySelector(".main-layout").appendChild((() => {
 				let something = document.createElement("div"); something.innerHTML = resources.guidePart + (stor2.version ? changes : resources.instructions) + "</span>";
 				something.setAttribute("id", "guide");
@@ -662,7 +683,7 @@ setInterval(tick, tickSpeed);
 
 function onChanged(changes) {
 	if(!changed) {
-		document.querySelector("head").appendChild((() => {let something = document.createElement("style"); something.innerHTML = resources.generalCSS2; return something;})());
+		//document.querySelector("head").appendChild((() => {let something = document.createElement("style"); something.innerHTML = resources.generalCSS2; return something;})());
 		changed = 1;
 	}
 	for(let i = 0; i < Object.keys(changes).length; i++) {

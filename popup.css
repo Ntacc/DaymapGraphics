@@ -1,0 +1,196 @@
+#main {
+    width: 670px;
+    height: 400px;
+    font-family: "Helvetica", sans-serif;
+    color: white;
+    font-size: 10pt;
+    padding-bottom: 30px;
+}
+body {
+    background: #1e1e1e;
+    scrollbar-color: cornflowerblue #222233;
+    scrollbar-width: thin;
+    padding-left: 20px;
+    padding-top: 3px;
+}
+.btn0 {
+    border: none;
+    /*border-radius: 5px;*/
+    background-color: transparent;
+    /*border: 0.8px dotted lightgoldenrodyellow;*/
+    font-size: 1em;
+    color: #eeeeee;
+    padding-left: 0px;
+    margin-left: 5px;
+    transition: padding-left 0.2s;
+    cursor: pointer;
+}
+.btn0:hover {
+    padding-left: 10px;
+    transition: padding-left 0.2s;
+    border-left: 3px solid #444444;
+}
+#bodyBackground {
+    display:inline-block;
+    width:100%;
+}
+#submit {
+    /*font-family: monospace;*/
+    margin: 2px;
+    padding: 3px 10px 3px 10px;
+    color: black;
+    border: 2px solid #444444;
+    border-radius: 15px;
+    transition: margin 0.2s ease-in;
+    cursor: pointer;
+    background-image: linear-gradient(135deg, palegreen, lightsteelblue);
+}
+#submit:hover {
+    margin: 0.5px 3.5px 3.5px 0.5px;
+    box-shadow: #555555 2px 1.5px 3px;
+    transition: margin 0.2s ease-in, box-shadow 0.2s;
+}
+tr {
+    height: 20px;
+}
+h2 {
+    font-family: monospace;
+}
+.a, h3, #bbheader {
+    background-clip: text;
+    color: transparent;
+}
+.a0 {
+    background-image: linear-gradient(135deg, cornflowerblue, darkorchid);
+}
+input[name="translucent"] {
+    accent-color: mediumslateblue;
+}
+input[name="blur"] {
+    accent-color: steelblue;
+}
+input[name="rainbowSpeed"] {
+    accent-color: royalblue;
+}
+input[type="text"] {
+    background-color: linen;
+    width: 100%;
+}
+input[type="range"] {
+    cursor: grab;
+}
+input[type="range"]:active {
+    cursor: grabbing;
+}
+input[readonly="true"] {
+    background-color: whitesmoke;
+    font-family: monospace;
+    width: 100px;
+    cursor: default;
+}
+input[type="text"], input[readonly="true"] {
+    border-radius: 5px;
+}
+input[type="text"] {
+    border-radius: 5px;
+}
+input[type="checkbox"] {
+    cursor: pointer;
+    accent-color: paleturquoise;
+}
+input[type="color"] {
+    border: 2px solid #444444;
+}
+.square {
+    width: 30px;
+    height: 30px;
+    margin: 5px;
+    display: inline-block;
+    transition: transform 1s, opacity 1s;
+    animation: disappear1 1s;
+}
+#squares {
+    position: fixed;
+    bottom: 0px;
+    right: -20px;
+    z-index: -100;
+    visibility: visible;
+    transition: transform 1s, opacity 1s;
+    animation: disappear0 1s;
+    width: 100vw;
+}
+.disappear {
+    transform: rotate(90deg) scale(10);
+    opacity: 0;
+    transition: all 1s;
+}
+.disappear .square {
+    transform: rotate(360deg);
+    margin: 50px;
+    transition: all 2s;
+}
+@keyframes disappear0 {
+    0% {
+        transform: rotate(90deg) scale(10);
+        opacity: 0;
+    }
+    100% {
+        transform: none;
+        opacity: 1;
+    }
+}
+@keyframes disappear1 {
+    0% {
+        transform: rotate(360deg);
+    }
+    100% {
+        transform: none;
+        margin: 5px;
+    }
+}
+.stuff {
+    margin-left: 5px;
+    padding-bottom: 10px;
+}
+.stuff div {
+    margin-left: 0px;
+}
+.stuff div p {
+    margin: 0px;
+    padding: 0px;
+    margin-left: 5px;
+}
+.stuff h4 {
+    margin-bottom: 5px;
+}
+#bbheader {
+    font-size: 100px;
+}
+.v8-0 h4 {
+    color: #b0ffe0;
+}
+.v8-1 h4 {
+    color: lightsalmon;
+}
+.removeCol {
+    width: 10px;
+}
+#animationCol {
+    width: 200px;
+}
+#colourgenCol {
+    width: 150px;
+}
+/*#animations tr:nth-child(odd) {
+    background-color: rgba(50, 40, 60, 0.3);
+}*/
+.remove, #addAnimation {
+    cursor: pointer;
+    user-select: none;
+}
+#animationPane td {
+    user-select: none;
+}
+select {
+    width: 100%;
+}

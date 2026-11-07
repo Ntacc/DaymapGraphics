@@ -226,6 +226,7 @@ const setStorage2 = (stor, stor5) => {
 class Animation {
 	constructor(type = "blank", colourgen = {type: "blank"}, args = null) {
 		this.type = type;
+		this.oldType = type;
 		this.colourgen = colourgen;
 		this.args = args;
 		this.id = Animation.counter.toString();
@@ -267,14 +268,15 @@ class Animation {
 			}
 		});
 		innerHTML += `</select></td><td><select name="colourgen${this.id}">`;
+		if(this.oldType != this.type) {
+			this.colourgen.type = colourgens[0];
+		}
 		for(let i = 0; i < colourgens.length; i++) {
 			innerHTML += `<option value="${colourgens[i]}" ${colourgens[i]=="blank"?"disabled":""} ${this.colourgen.type==colourgens[i]?" selected":""}>${Animation.colourgens.get(colourgens[i]).displayName}</option>`;
 		}
 		innerHTML += "</select></td></tr>";
 		this.HTML = innerHTML;
-		if(colourgens.indexOf(this.colourgen.type) == -1) {
-			this.colourgen.type = colourgens[0];
-		}
+
 	}
 	display() {
 		this.updateHTML();
@@ -293,6 +295,7 @@ class Animation {
 	}
 	getValues() {
 		Animation.added.delete(this.type);
+		this.oldType = this.type;
 		this.type = document.querySelector(`select[name="animationName${this.id}"]`).value;
 		Animation.added.set(this.type, 1);
 		this.colourgen = {type: document.querySelector(`select[name="colourgen${this.id}"]`).value};
